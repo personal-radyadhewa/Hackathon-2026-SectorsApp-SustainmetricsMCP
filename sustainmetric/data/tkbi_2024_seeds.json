@@ -1,0 +1,57 @@
+[
+  {
+    "id": "TKBI-2024-ENE-01",
+    "sector": "Energy",
+    "subsector": "Geothermal Power",
+    "activity": "Electricity Generation from Geothermal Energy",
+    "criteria_level": "Hijau",
+    "tsc": "Life-cycle GHG emissions intensity must be strictly below 100g CO2e/kWh. Direct non-condensable gases (NCG) such as H2S and CO2 must be reinjected or captured using gas abatement units.",
+    "dnsh": "Zero contamination of surface water and shallow aquifers. Geothermal brine must be 100% reinjected into the reservoir depth to avoid seismic destabilization and land subsidence.",
+    "mss": "Compliance with standard occupational safety regarding toxic gas exposure (H2S continuous detection), community health buffer zones, and fair labor.",
+    "keywords": ["geothermal", "panas bumi", "pltp", "emission intensity", "reinjection", "clean electricity", "lumut balai", "kamojang", "dieng", "salak"]
+  },
+  {
+    "id": "TKBI-2024-ENE-02",
+    "sector": "Energy",
+    "subsector": "Coal Transition",
+    "activity": "Coal-Fired Power Plant Early Retirement & Managed Phase-Out",
+    "criteria_level": "Transisi",
+    "tsc": "Binding early retirement date legally enacted prior to 2040. Minimum 20% co-firing with verified sustainable biomass. No new coal capacity expansion allowed.",
+    "dnsh": "Air pollutant concentration monitoring for SO2, NOx, and particulate matter (PM2.5). Fly ash and bottom ash (FABA) safely recycled or managed under non-hazardous protocols.",
+    "mss": "Equitable transition framework ensuring re-skilling or severance packages for local workforce without unilateral mass layoffs.",
+    "keywords": ["coal", "batubara", "pltu", "early retirement", "pensiun dini", "transisi", "co-firing", "biomass", "faba", "phase-out"]
+  },
+  {
+    "id": "TKBI-2024-ENE-03",
+    "sector": "Energy",
+    "subsector": "Solar & Wind",
+    "activity": "Electricity Generation from Solar Photovoltaic and Wind Turbines",
+    "criteria_level": "Hijau",
+    "tsc": "Direct operational GHG emissions must equal 0g CO2e/kWh. Power purchase agreement (PPA) connected to regional grid or off-grid mini-grids replacing diesel gensets.",
+    "dnsh": "Decommissioning plan and recycling contract for end-of-life solar PV modules and wind turbine composite blades.",
+    "mss": "Free, Prior, and Informed Consent (FPIC) obtained from customary indigenous communities regarding land acquisition.",
+    "keywords": ["solar", "wind", "plts", "pltb", "photovoltaic", "turbin angin", "clean energy", "zero emissions", "sidrap", "cirata"]
+  },
+  {
+    "id": "TKBI-2024-FIN-01",
+    "sector": "Financial Services",
+    "subsector": "Banking & Sustainable Finance",
+    "activity": "Green Asset Ratio and Sustainable Lending Portfolio",
+    "criteria_level": "Hijau",
+    "tsc": "Minimum 20% of total commercial loan and bond investment portfolio allocated to OJK POJK 51/2017 eligible Sustainable Business Activities (KKUB). Zero project financing for new greenfield unabated coal mines.",
+    "dnsh": "Implementation of mandatory ESG Risk Assessment for commercial corporate financing above IDR 10 billion.",
+    "mss": "Enforcement of comprehensive environmental & social exclusion list (child labor, illegal deforestation, hazardous waste dumping).",
+    "keywords": ["bank", "perbankan", "sustainable financing", "kkub", "green bonds", "esg loan", "green asset ratio", "gar", "pojk 51", "microfinance"]
+  },
+  {
+    "id": "TKBI-2024-IND-01",
+    "sector": "Manufacturing & Materials",
+    "subsector": "Clean Metal Smelting",
+    "activity": "Low-Carbon Nickel & Aluminum Smelting",
+    "criteria_level": "Transisi",
+    "tsc": "Smelter power supplied by minimum 50% renewable energy or low-carbon natural gas. Direct carbon intensity < 8 tCO2e/t aluminum or < 12 tCO2e/t nickel.",
+    "dnsh": "Zero Deep Sea Tailings Placement (DSTP); dry stacking tailings management required.",
+    "mss": "Stringent occupational safety standards in high-heat pyrometallurgical zones.",
+    "keywords": ["smelter", "nickel", "nikel", "aluminum", "low carbon", "tailings", "renewable power", "industrial park"]
+  }
+]

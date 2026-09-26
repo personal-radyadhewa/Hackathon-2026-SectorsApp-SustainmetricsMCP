@@ -1,0 +1,40 @@
+{
+  "ticker": "BBRI",
+  "name": "PT Bank Rakyat Indonesia (Persero) Tbk",
+  "subsector": "banks",
+  "overview": {
+    "symbol": "BBRI",
+    "company_name": "Bank Rakyat Indonesia (Persero) Tbk",
+    "industry": "Commercial Banking",
+    "subsector": "Banks",
+    "description": "PT Bank Rakyat Indonesia (Persero) Tbk is Indonesia's largest state-owned commercial bank with dominant microfinance and sustainable SME lending operations.",
+    "market_cap": 750000000000000
+  },
+  "financials": {
+    "operating_cash_flow": 82000000000000,
+    "capital_expenditures": 12000000000000,
+    "revenue": 185000000000000,
+    "net_income": 60400000000000,
+    "total_assets": 1965000000000000,
+    "total_debt": 210000000000000,
+    "cash_and_equivalents": 290000000000000,
+    "ebitda": 95000000000000,
+    "roa_pct": 3.07,
+    "capex_to_revenue_pct": 6.48,
+    "capex_coverage_ratio": 6.83
+  },
+  "news": [
+    {
+      "id": "news-bbri-01",
+      "title": "BRI Distributes IDR 764 Trillion in Sustainable Business Activity Loans (KKUB)",
+      "date": "2024-06-25",
+      "summary": "Bank BRI increased sustainable business credit portfolio to 65.7% of total loan book, complying with OJK POJK 51/2017 and TKBI 2024 green financing guidelines."
+    },
+    {
+      "id": "news-bbri-02",
+      "title": "BRI Issues Green Bonds to Finance Micro Renewable Energy & Eco-Agriculture",
+      "date": "2024-08-01",
+      "summary": "BRI completed stage 3 green bond issuance of IDR 5 trillion to fund solar-powered water irrigation and rural sustainable agriculture."
+    }
+  ]
+}

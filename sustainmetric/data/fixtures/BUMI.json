@@ -1,0 +1,40 @@
+{
+  "ticker": "BUMI",
+  "name": "PT Bumi Resources Tbk",
+  "subsector": "coal-mining",
+  "overview": {
+    "symbol": "BUMI",
+    "company_name": "Bumi Resources Tbk",
+    "industry": "Thermal Coal",
+    "subsector": "Coal Mining",
+    "description": "PT Bumi Resources Tbk is a holding company primarily engaged in thermal coal exploration and extraction through subsidiaries including Kaltim Prima Coal and Arutmin.",
+    "market_cap": 32000000000000
+  },
+  "financials": {
+    "operating_cash_flow": 1100000000000,
+    "capital_expenditures": 1900000000000,
+    "revenue": 21000000000000,
+    "net_income": -450000000000,
+    "total_assets": 65000000000000,
+    "total_debt": 28000000000000,
+    "cash_and_equivalents": 1200000000000,
+    "ebitda": 2300000000000,
+    "roa_pct": -0.69,
+    "capex_to_revenue_pct": 9.05,
+    "capex_coverage_ratio": 0.58
+  },
+  "news": [
+    {
+      "id": "news-bumi-01",
+      "title": "Bumi Resources Faces Lower Selling Price and Royalty Burdens",
+      "date": "2024-05-14",
+      "summary": "Bumi Resources experienced margin compression due to lower thermal coal realization prices and high government non-tax revenue obligations."
+    },
+    {
+      "id": "news-bumi-02",
+      "title": "BUMI Studies Coal Downstreaming and Gasification Feasibility",
+      "date": "2024-07-19",
+      "summary": "BUMI continues feasibility studies for coal gasification to methanol, without committing committed capex as debt restructuring covenants restrict major capital outlays."
+    }
+  ]
+}

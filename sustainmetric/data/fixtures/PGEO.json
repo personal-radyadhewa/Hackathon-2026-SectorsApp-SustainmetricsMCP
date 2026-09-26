@@ -1,0 +1,40 @@
+{
+  "ticker": "PGEO",
+  "name": "PT Pertamina Geothermal Energy Tbk",
+  "subsector": "alternative-energy",
+  "overview": {
+    "symbol": "PGEO",
+    "company_name": "Pertamina Geothermal Energy Tbk",
+    "industry": "Renewable Electricity",
+    "subsector": "Alternative Energy",
+    "description": "PT Pertamina Geothermal Energy Tbk is an Indonesia-based company engaged in the exploration, exploitation, and power production of geothermal energy across Indonesia.",
+    "market_cap": 48500000000000
+  },
+  "financials": {
+    "operating_cash_flow": 3850000000000,
+    "capital_expenditures": 2200000000000,
+    "revenue": 6200000000000,
+    "net_income": 2400000000000,
+    "total_assets": 45000000000000,
+    "total_debt": 14000000000000,
+    "cash_and_equivalents": 8500000000000,
+    "ebitda": 4900000000000,
+    "roa_pct": 5.33,
+    "capex_to_revenue_pct": 35.48,
+    "capex_coverage_ratio": 1.75
+  },
+  "news": [
+    {
+      "id": "news-pgeo-01",
+      "title": "Pertamina Geothermal Energy Allocates $350 Million Capex for Lumut Balai Unit 2 Expansion",
+      "date": "2024-08-15",
+      "summary": "PGEO continues green expansion with 55 MW Lumut Balai Unit 2 geothermal power plant, targeting commercial operation in 2024 to increase clean energy dispatch."
+    },
+    {
+      "id": "news-pgeo-02",
+      "title": "PGEO Signs Geothermal Co-generation Agreement to Cut Carbon Emissions",
+      "date": "2024-07-22",
+      "summary": "PT Pertamina Geothermal Energy signed secondary fluid heat exchange agreement reducing operational GHG intensity below 80g CO2e/kWh."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "ticker": "BREN",
+  "name": "PT Barito Renewables Energy Tbk",
+  "subsector": "alternative-energy",
+  "overview": {
+    "symbol": "BREN",
+    "company_name": "Barito Renewables Energy Tbk",
+    "industry": "Renewable Electricity",
+    "subsector": "Alternative Energy",
+    "description": "PT Barito Renewables Energy Tbk is an Indonesian holding company operating renewable energy assets including Star Energy Geothermal with over 880 MW operating capacity.",
+    "market_cap": 950000000000000
+  },
+  "financials": {
+    "operating_cash_flow": 3200000000000,
+    "capital_expenditures": 4800000000000,
+    "revenue": 9100000000000,
+    "net_income": 1600000000000,
+    "total_assets": 55000000000000,
+    "total_debt": 42000000000000,
+    "cash_and_equivalents": 3800000000000,
+    "ebitda": 4500000000000,
+    "roa_pct": 2.91,
+    "capex_to_revenue_pct": 52.7,
+    "capex_coverage_ratio": 0.67
+  },
+  "news": [
+    {
+      "id": "news-bren-01",
+      "title": "Barito Renewables Acquired Sidrap Wind Power Farm for Clean Energy Portfolio",
+      "date": "2024-04-18",
+      "summary": "BREN completed acquisition of 75 MW Sidrap wind farm in South Sulawesi, funding via debt facilities and corporate loans."
+    },
+    {
+      "id": "news-bren-02",
+      "title": "Barito Renewables Explores Geothermal Expansion Across Salak and Wayang Windu",
+      "date": "2024-05-30",
+      "summary": "BREN announced aggressive retrofit and capacity expansion plans, facing high debt amortization schedules over the next 24 months."
+    }
+  ]
+}

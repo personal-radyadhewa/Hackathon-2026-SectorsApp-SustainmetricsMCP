@@ -1,0 +1,40 @@
+{
+  "ticker": "ADRO",
+  "name": "PT Alamtri Resources Indonesia Tbk (Adaro)",
+  "subsector": "coal-mining",
+  "overview": {
+    "symbol": "ADRO",
+    "company_name": "Adaro Energy Indonesia Tbk",
+    "industry": "Thermal Coal",
+    "subsector": "Coal Mining",
+    "description": "PT Adaro Energy Indonesia Tbk is an integrated energy company in Indonesia with key operations in coal mining, coal logistics, and power generation.",
+    "market_cap": 115000000000000
+  },
+  "financials": {
+    "operating_cash_flow": 28500000000000,
+    "capital_expenditures": 9800000000000,
+    "revenue": 98000000000000,
+    "net_income": 25000000000000,
+    "total_assets": 160000000000000,
+    "total_debt": 22000000000000,
+    "cash_and_equivalents": 48000000000000,
+    "ebitda": 38000000000000,
+    "roa_pct": 15.6,
+    "capex_to_revenue_pct": 10.0,
+    "capex_coverage_ratio": 2.91
+  },
+  "news": [
+    {
+      "id": "news-adro-01",
+      "title": "Adaro Reports Strong Cash Flow on Metallurgical and Thermal Coal Shipments",
+      "date": "2024-06-10",
+      "summary": "Adaro maintained production targets of 65-67 million tonnes of coal, generating record operational cash flow while scouting industrial park aluminum smelter investments."
+    },
+    {
+      "id": "news-adro-02",
+      "title": "Adaro Prepares Spin-Off of Thermal Coal Assets to Accelerate Green Narrative",
+      "date": "2024-09-12",
+      "summary": "Adaro Energy announced corporate restructuring to separate thermal coal business, though thermal coal revenue still represents over 82% of current consolidated revenue."
+    }
+  ]
+}
