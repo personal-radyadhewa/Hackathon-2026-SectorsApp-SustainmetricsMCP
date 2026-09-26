@@ -102,19 +102,36 @@ class ScoringEngine:
         findings: list[str] = []
         score = 0.0
 
+        subsector = str(overview.get("subsector", "")).lower()
+        industry = str(overview.get("industry", "")).lower()
+        desc = str(overview.get("description", "")).lower()
+        all_text = " ".join([f"{n.get('title', '')} {n.get('summary', '')}" for n in news]).lower()
+        full_text = f"{all_text} {desc} {subsector} {industry}"
+
         # 1. Base Taxonomy Alignment (Max 45 pts)
         top_match = tkbi_matches[0] if tkbi_matches else None
-        criteria_level = top_match.get("criteria_level") if top_match else "Merah"
-        
+        raw_criteria_level = top_match.get("criteria_level") if top_match else "Merah"
+
+        # Guardrail: Mining/extracting unabated coal fails TKBI transition criteria
+        is_coal_extractor = any(k in subsector or k in industry or k in desc for k in ["coal mining", "thermal coal", "tambang batubara"])
+        if is_coal_extractor:
+            # TKBI 2024 only grants 'Transisi' for binding early retirement of power plants, NOT coal mining
+            criteria_level = "Merah"
+            findings.append("Core operations involve unabated thermal coal extraction; fails TKBI 2024 technical criteria.")
+        else:
+            criteria_level = raw_criteria_level
+
         if criteria_level == "Hijau":
             score += 45.0
             findings.append(f"Core activity aligns with TKBI 2024 'Hijau' criteria ({top_match.get('activity')}).")
         elif criteria_level == "Transisi":
             score += 30.0
             findings.append(f"Activity classified under TKBI 2024 'Transisi' phase ({top_match.get('activity')}).")
-        else:
+        elif not is_coal_extractor:
             score += 10.0
             findings.append("Core operations fall outside or fail green screening criteria under TKBI 2024.")
+        else:
+            score += 5.0
 
         # 2. Capex Commitment & Intensity (Max 30 pts)
         capex = float(financials.get("capital_expenditures", 0) or 0)
@@ -132,16 +149,12 @@ class ScoringEngine:
                 score += 5.0
                 findings.append(f"Low capital intensity: Capex/Revenue is only {capex_ratio:.1f}%, raising execution risk.")
         else:
-            # Brown sector: check if capex is flowing into transition or sustaining coal
             score += 5.0
             findings.append(f"Capital expenditure is primarily targeted at maintaining legacy operations ({capex_ratio:.1f}% of revenue).")
 
         # 3. Qualitative Claim vs Action Audit (Max 25 pts with penalties)
         green_claim_count = 0
         brown_mention_count = 0
-        all_text = " ".join([f"{n.get('title', '')} {n.get('summary', '')}" for n in news]).lower()
-        desc = str(overview.get("description", "")).lower()
-        full_text = f"{all_text} {desc}"
 
         for kw in GREEN_KEYWORDS:
             if kw in full_text:
@@ -153,7 +166,7 @@ class ScoringEngine:
         if criteria_level == "Hijau":
             if green_claim_count > 0:
                 score += 25.0
-                findings.append(f"Documented clean energy deployment backed by verified news releases.")
+                findings.append("Documented clean energy deployment backed by verified disclosures.")
             else:
                 score += 15.0
         elif criteria_level == "Transisi":
@@ -163,13 +176,14 @@ class ScoringEngine:
             else:
                 score += 10.0
         else:
-            # Fossil / Laggard profile
-            if green_claim_count >= 3 and capex_ratio < 10.0:
-                # Discrepancy: Aggressive green narrative without capital commitment -> GREENWASHING RED FLAG
-                score -= 15.0
-                findings.append("GREENWASHING ALERT: High green promotional narrative detected without material capital expenditure support.")
-            elif brown_mention_count > 0:
-                findings.append("Operations dominated by thermal extraction; minimal green transition disclosures.")
+            # Fossil / Legacy profile
+            if green_claim_count >= 2:
+                # Greenwashing penalty: Claiming green narrative with fossil revenue
+                score -= 10.0
+                findings.append("GREENWASHING ALERT: Green narrative detected alongside dominant fossil cash flows.")
+            else:
+                score += 5.0
+                findings.append("Disclosures align with conventional legacy energy operations.")
 
         clamped_score = min(100.0, max(0.0, score))
         return round(clamped_score, 1), findings
