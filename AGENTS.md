@@ -141,7 +141,29 @@ Coordinates: `(Viability Score X ∈ [0, 100], Consistency Score Y ∈ [0, 100])
 - **Signature**: `inspect_ticker_evidence(ticker: str) -> dict`
 - **Behavior**: Retrieves raw cached audit trail: qualitative news claims vs Capex line items, discrepancies, and TKBI rule matches.
 
+### 4.5. `visualize_green_audit`
+- **Signature**: `visualize_green_audit(chart_type: str = "quadrant", ticker: str | None = None, task_id: str | None = None) -> dict`
+- **Behavior**: Enabled on-demand when requested by the user. Generates ready-to-execute Python matplotlib/seaborn code for Code Interpreter execution.
+- **Chart Types**:
+  - `quadrant`: 4-Quadrant consistency vs viability classification matrix with risk zones.
+  - `green_effort`: Green vs brown transition discourse and disclosure breakdown.
+  - `financial_coverage`: Operating Cash Flow (OCF) vs green Capex capacity.
+  - `radar`: Multi-axis sustainability and fundamental viability radar profile.
+- **Response**:
+  ```json
+  {
+    "chart_type": "green_effort",
+    "ticker": "PGEO",
+    "description": "Green effort breakdown and transition discourse for PGEO.",
+    "runtime": "python (matplotlib / seaborn)",
+    "executable_code": "import matplotlib.pyplot as plt...",
+    "instructions": "Execute the provided 'executable_code' in a Python environment or Code Interpreter with matplotlib and seaborn installed.",
+    "disclaimer": "Information & Analysis Tool Only. Not Financial Advice or Investment Recommendation."
+  }
+  ```
+
 ---
+
 
 ## 5. Data Invariants & Quota Protection
 

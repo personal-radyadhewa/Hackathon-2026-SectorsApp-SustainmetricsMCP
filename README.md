@@ -92,8 +92,11 @@ Add to Cursor MCP settings:
    Queries OJK TKBI 2024 database for sector rules, TSC, DNSH, and MSS.
 4. `inspect_ticker_evidence(ticker: str) -> dict`:
    Inspects raw financials, news claims, and TKBI citations for a single ticker.
+5. `visualize_green_audit(chart_type: str = "quadrant", ticker: str = None, task_id: str = None) -> dict`:
+   Generates executable matplotlib/seaborn code on-demand for Code Interpreters (`quadrant`, `green_effort`, `financial_coverage`, `radar`).
 
 ---
+
 
 ## 6. Running Tests
 
