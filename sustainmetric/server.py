@@ -13,6 +13,7 @@ from mcp.server.fastmcp import FastMCP
 from sustainmetric.sectors_client import SectorsClient
 from sustainmetric.task_queue import TaskQueue, DISCLAIMER_TEXT
 from sustainmetric.tkbi_vector_store import TKBIVectorStore
+from sustainmetric.visualizer import build_visualization_payload
 
 # Initialize FastMCP Server
 mcp = FastMCP("sustainmetric-idx")
@@ -113,6 +114,108 @@ async def inspect_ticker_evidence(ticker: str) -> dict[str, Any]:
             "error": f"Failed to retrieve evidence: {str(e)}",
             "disclaimer": DISCLAIMER_TEXT,
         }
+
+
+@mcp.tool()
+async def visualize_green_audit(
+    chart_type: str = "quadrant",
+    ticker: str | None = None,
+    task_id: str | None = None,
+) -> dict[str, Any]:
+    """Generate self-contained matplotlib/seaborn code to visualize green audit and transition efforts.
+
+    Enabled on-demand when requested by the user. Suitable for execution in Python environments
+    or Agent Code Interpreters.
+
+    Parameters:
+    - chart_type: Type of chart. Options:
+        * 'quadrant': 4-Quadrant consistency vs viability matrix (default).
+        * 'green_effort': Green vs brown discourse and transition share breakdown.
+        * 'financial_coverage': Operating cash flow vs green Capex coverage.
+        * 'radar': Multi-axis sustainability and fundamental viability radar profile.
+    - ticker: Specific IDX ticker to visualize (e.g. 'PGEO', 'ADRO').
+    - task_id: Optional completed audit task ID to pull existing multi-ticker matrix results.
+    """
+    audit_data: Any = []
+
+    # Priority 1: Pull from task_id if provided
+    if task_id:
+        task = task_queue.get_task_status(task_id)
+        if task and "results" in task:
+            audit_data = task["results"]
+        elif task and "error" in task:
+            return {"error": task["error"], "disclaimer": DISCLAIMER_TEXT}
+
+    # Priority 2: Single ticker lookup if no task_id or specific ticker requested
+    if not audit_data and ticker:
+        clean_ticker = ticker.strip().upper()
+        # Fetch report and news to evaluate
+        try:
+            report = await sectors_client.get_company_report(clean_ticker)
+            news = await sectors_client.get_company_news(clean_ticker)
+            matches = vector_store.search(clean_ticker, top_k=2)
+
+            from sustainmetric.scoring_engine import ScoringEngine
+            v_score, v_metrics = ScoringEngine.calculate_viability_score(report.get("financials", {}))
+            c_score, findings = ScoringEngine.calculate_consistency_score(
+                report.get("overview", {}),
+                report.get("financials", {}),
+                news,
+                matches,
+            )
+            quadrant = ScoringEngine.classify_quadrant(v_score, c_score)
+
+            # Count green & brown keywords
+            green_kw = 0
+            brown_kw = 0
+            from sustainmetric.scoring_engine import GREEN_KEYWORDS, BROWN_KEYWORDS
+            for n in news:
+                title = str(n.get("title", "")).lower()
+                for kw in GREEN_KEYWORDS:
+                    if kw in title:
+                        green_kw += 1
+                for kw in BROWN_KEYWORDS:
+                    if kw in title:
+                        brown_kw += 1
+
+            audit_data = [{
+                "ticker": clean_ticker,
+                "quadrant": quadrant,
+                "consistency_score": c_score,
+                "viability_score": v_score,
+                "tkbi_alignment": {
+                    "status": "HIJAU" if c_score >= 60 else "MERAH",
+                    "matched_criteria": matches[0]["rule_name"] if matches else "N/A",
+                },
+                "financial_summary": {
+                    "operating_cash_flow": v_metrics["operating_cash_flow"],
+                    "capex": v_metrics["capex"],
+                    "capex_coverage_ratio": v_metrics["capex_coverage_ratio"],
+                    "roa_pct": v_metrics["roa_pct"],
+                },
+                "audit_findings": findings,
+                "green_keywords_count": green_kw,
+                "brown_keywords_count": brown_kw,
+            }]
+        except Exception as e:
+            return {
+                "error": f"Failed to retrieve data for ticker '{clean_ticker}': {str(e)}",
+                "disclaimer": DISCLAIMER_TEXT,
+            }
+
+    if not audit_data:
+        # Default placeholder demonstration tickers if nothing specified
+        audit_data = [
+            {"ticker": "PGEO", "viability_score": 75.0, "consistency_score": 85.0, "quadrant": "Transisi Tangguh"},
+            {"ticker": "ADRO", "viability_score": 78.0, "consistency_score": 42.0, "quadrant": "Sumber Kas Konvensional"},
+            {"ticker": "BREN", "viability_score": 48.0, "consistency_score": 72.0, "quadrant": "Dampak Spekulatif"},
+            {"ticker": "BUMI", "viability_score": 38.0, "consistency_score": 25.0, "quadrant": "Tertinggal & Red Flag"},
+        ]
+
+    payload = build_visualization_payload(chart_type, ticker, audit_data)
+    payload["disclaimer"] = DISCLAIMER_TEXT
+    return payload
+
 
 
 def main():
