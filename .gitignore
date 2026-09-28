@@ -7,3 +7,5 @@ venv/
 *.db
 .env
 .pytest_cache/
+.venv-wsl/
+
