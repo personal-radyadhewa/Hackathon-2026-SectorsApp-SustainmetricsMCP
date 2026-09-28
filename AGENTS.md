@@ -160,9 +160,25 @@ Coordinates: `(Viability Score X ∈ [0, 100], Consistency Score Y ∈ [0, 100])
     "instructions": "Execute the provided 'executable_code' in a Python environment or Code Interpreter with matplotlib and seaborn installed.",
     "disclaimer": "Information & Analysis Tool Only. Not Financial Advice or Investment Recommendation."
   }
+### 4.6. `generate_tkbi_audit_checklist`
+- **Signature**: `generate_tkbi_audit_checklist(ticker: str, sector: str | None = None, output_dir: str = ".") -> dict`
+- **Behavior**: Maps emiten to the 8 TKBI Versi 3 focus & enabling sectors, evaluates Technical Screening Criteria (TSC) and DNSH/social safeguards, and generates standard Excel checklist `{emiten}_audit_TKBI.xlsx` conforming to `Template_Audit_TKBI.xlsx`.
+- **Response**:
+  ```json
+  {
+    "ticker": "PGEO",
+    "status": "SUCCESS",
+    "file_generated": "/path/to/PGEO_audit_TKBI.xlsx",
+    "file_name": "PGEO_audit_TKBI.xlsx",
+    "mapped_sector": "Energi",
+    "tkbi_version": "TKBI Versi 3 (2026)",
+    "message": "Successfully generated TKBI audit checklist for PGEO at PGEO_audit_TKBI.xlsx",
+    "disclaimer": "Information & Analysis Tool Only. Not Financial Advice or Investment Recommendation."
+  }
   ```
 
 ---
+
 
 
 ## 5. Data Invariants & Quota Protection

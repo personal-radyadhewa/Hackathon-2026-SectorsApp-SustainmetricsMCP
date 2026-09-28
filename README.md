@@ -94,8 +94,11 @@ Add to Cursor MCP settings:
    Inspects raw financials, news claims, and TKBI citations for a single ticker.
 5. `visualize_green_audit(chart_type: str = "quadrant", ticker: str = None, task_id: str = None) -> dict`:
    Generates executable matplotlib/seaborn code on-demand for Code Interpreters (`quadrant`, `green_effort`, `financial_coverage`, `radar`).
+6. `generate_tkbi_audit_checklist(ticker: str, sector: str = None, output_dir: str = ".") -> dict`:
+   Exports completed OJK TKBI Versi 3 audit checklist in Excel (`{emiten}_audit_TKBI.xlsx`) conforming directly to `Template_Audit_TKBI.xlsx`.
 
 ---
+
 
 
 ## 6. Running Tests
