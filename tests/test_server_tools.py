@@ -70,3 +70,35 @@ async def test_trigger_green_audit_end_to_end():
     assert adro_res["quadrant_code"] == "Q3"
     assert adro_res["consistency_score"] < 60.0
     assert adro_res["viability_score"] >= 60.0
+
+
+@pytest.mark.asyncio
+async def test_visualize_green_audit_quadrant():
+    from sustainmetric.server import visualize_green_audit
+    res = await visualize_green_audit(chart_type="quadrant")
+    assert res["chart_type"] == "quadrant"
+    assert "plt.subplots" in res["executable_code"]
+    assert "Q1: Transisi Tangguh" in res["executable_code"]
+    assert res["disclaimer"] == DISCLAIMER_TEXT
+
+
+@pytest.mark.asyncio
+async def test_visualize_green_audit_emiten_efforts():
+    from sustainmetric.server import visualize_green_audit
+    
+    # 1. Green effort breakdown
+    res_effort = await visualize_green_audit(chart_type="green_effort", ticker="PGEO")
+    assert res_effort["chart_type"] == "green_effort"
+    assert "Green Discourse" in res_effort["executable_code"]
+    assert "PGEO" in res_effort["executable_code"]
+
+    # 2. Financial coverage
+    res_cov = await visualize_green_audit(chart_type="financial_coverage", ticker="PGEO")
+    assert res_cov["chart_type"] == "financial_coverage"
+    assert "Operating Cash Flow (OCF)" in res_cov["executable_code"]
+
+    # 3. Radar profile
+    res_radar = await visualize_green_audit(chart_type="radar", ticker="PGEO")
+    assert res_radar["chart_type"] == "radar"
+    assert "polar=True" in res_radar["executable_code"]
+

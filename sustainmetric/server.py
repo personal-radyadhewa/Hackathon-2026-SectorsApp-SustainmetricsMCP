@@ -155,20 +155,17 @@ async def visualize_green_audit(
             news = await sectors_client.get_company_news(clean_ticker)
             matches = vector_store.search(clean_ticker, top_k=2)
 
-            from sustainmetric.scoring_engine import ScoringEngine
-            v_score, v_metrics = ScoringEngine.calculate_viability_score(report.get("financials", {}))
-            c_score, findings = ScoringEngine.calculate_consistency_score(
-                report.get("overview", {}),
-                report.get("financials", {}),
-                news,
-                matches,
+            from sustainmetric.scoring_engine import ScoringEngine, GREEN_KEYWORDS, BROWN_KEYWORDS
+            eval_res = ScoringEngine.evaluate(
+                overview=report.get("overview", {}),
+                financials=report.get("financials", {}),
+                news=news,
+                tkbi_matches=matches,
             )
-            quadrant = ScoringEngine.classify_quadrant(v_score, c_score)
 
             # Count green & brown keywords
             green_kw = 0
             brown_kw = 0
-            from sustainmetric.scoring_engine import GREEN_KEYWORDS, BROWN_KEYWORDS
             for n in news:
                 title = str(n.get("title", "")).lower()
                 for kw in GREEN_KEYWORDS:
@@ -178,25 +175,11 @@ async def visualize_green_audit(
                     if kw in title:
                         brown_kw += 1
 
-            audit_data = [{
-                "ticker": clean_ticker,
-                "quadrant": quadrant,
-                "consistency_score": c_score,
-                "viability_score": v_score,
-                "tkbi_alignment": {
-                    "status": "HIJAU" if c_score >= 60 else "MERAH",
-                    "matched_criteria": matches[0]["rule_name"] if matches else "N/A",
-                },
-                "financial_summary": {
-                    "operating_cash_flow": v_metrics["operating_cash_flow"],
-                    "capex": v_metrics["capex"],
-                    "capex_coverage_ratio": v_metrics["capex_coverage_ratio"],
-                    "roa_pct": v_metrics["roa_pct"],
-                },
-                "audit_findings": findings,
-                "green_keywords_count": green_kw,
-                "brown_keywords_count": brown_kw,
-            }]
+            eval_res["ticker"] = clean_ticker
+            eval_res["green_keywords_count"] = green_kw
+            eval_res["brown_keywords_count"] = brown_kw
+            audit_data = [eval_res]
+
         except Exception as e:
             return {
                 "error": f"Failed to retrieve data for ticker '{clean_ticker}': {str(e)}",
