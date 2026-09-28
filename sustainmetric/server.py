@@ -14,6 +14,7 @@ from sustainmetric.sectors_client import SectorsClient
 from sustainmetric.task_queue import TaskQueue, DISCLAIMER_TEXT
 from sustainmetric.tkbi_vector_store import TKBIVectorStore
 from sustainmetric.visualizer import build_visualization_payload
+from sustainmetric.audit_exporter import generate_tkbi_audit_excel
 
 # Initialize FastMCP Server
 mcp = FastMCP("sustainmetric-idx")
@@ -198,6 +199,68 @@ async def visualize_green_audit(
     payload = build_visualization_payload(chart_type, ticker, audit_data)
     payload["disclaimer"] = DISCLAIMER_TEXT
     return payload
+
+
+@mcp.tool()
+async def generate_tkbi_audit_checklist(
+    ticker: str,
+    sector: str | None = None,
+    output_dir: str = ".",
+) -> dict[str, Any]:
+    """Generate a filled OJK TKBI Versi 3 audit checklist Excel file conforming to Template_Audit_TKBI.xlsx.
+
+    Flow:
+    1. Maps the emiten's subsector & business description to the corresponding TKBI sector(s) (among 8 sectors).
+    2. Evaluates each Technical Screening Criteria (TSC), Do No Significant Harm (DNSH), and Social Safeguards.
+    3. Populates AI answers (HIJAU/TRANSISI/TIDAK), confidence levels, reasoning, and document evidence citations.
+    Saves file as '{emiten}_audit_TKBI.xlsx'.
+
+    Parameters:
+    - ticker: Emiten IDX stock ticker (e.g. 'PGEO', 'ADRO', 'BBRI').
+    - sector: Optional explicit sector override (e.g. 'Energi', 'Manufaktur', 'Konstruksi dan Real Estat').
+    - output_dir: Destination directory for generated spreadsheet (defaults to current directory).
+    """
+    clean_ticker = ticker.strip().upper()
+    try:
+        report = await sectors_client.get_company_report(clean_ticker)
+        news = await sectors_client.get_company_news(clean_ticker)
+        matches = vector_store.search(clean_ticker, top_k=3)
+
+        from sustainmetric.scoring_engine import ScoringEngine
+        c_score, _ = ScoringEngine.calculate_consistency_score(
+            report.get("overview", {}),
+            report.get("financials", {}),
+            news,
+            matches,
+        )
+
+        excel_path = generate_tkbi_audit_excel(
+            ticker=clean_ticker,
+            report=report,
+            news=news,
+            tkbi_matches=matches,
+            consistency_score=c_score,
+            sector=sector,
+            output_dir=output_dir,
+        )
+
+        return {
+            "ticker": clean_ticker,
+            "status": "SUCCESS",
+            "file_generated": str(excel_path.resolve()),
+            "file_name": excel_path.name,
+            "mapped_sector": sector or report.get("overview", {}).get("subsector", "Energi"),
+            "tkbi_version": "TKBI Versi 3 (2026)",
+            "message": f"Successfully generated TKBI audit checklist for {clean_ticker} at {excel_path.name}",
+            "disclaimer": DISCLAIMER_TEXT,
+        }
+    except Exception as e:
+        return {
+            "ticker": clean_ticker,
+            "error": f"Failed to generate TKBI checklist: {str(e)}",
+            "disclaimer": DISCLAIMER_TEXT,
+        }
+
 
 
 
