@@ -258,7 +258,8 @@ class SectorsClient:
 
         url = f"{self.base_url}/news/"
         headers = {"Authorization": self.api_key}
-        params = {"symbol": ticker.upper()}
+        clean_sym = ticker.upper().replace(".JK", "")
+        params = {"symbols": clean_sym}
 
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
@@ -266,8 +267,9 @@ class SectorsClient:
                 self.api_calls_count += 1
                 if resp.status_code == 200:
                     payload = resp.json()
-                    self._write_cache(cache_key, payload)
-                    return payload
+                    news_list = payload.get("results", []) if isinstance(payload, dict) else payload
+                    self._write_cache(cache_key, news_list)
+                    return news_list
                 elif self.use_fixtures_fallback:
                     fixture = self._load_fixture(ticker)
                     if fixture:
