@@ -8,6 +8,11 @@ import argparse
 import sys
 from typing import Any
 
+from dotenv import find_dotenv, load_dotenv
+
+# Auto-load .env configuration
+load_dotenv(find_dotenv(usecwd=True))
+
 from mcp.server.fastmcp import FastMCP
 
 from sustainmetric.sectors_client import SectorsClient
