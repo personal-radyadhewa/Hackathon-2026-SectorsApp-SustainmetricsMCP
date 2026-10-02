@@ -2,7 +2,7 @@
 
 from sustainmetric.scoring_engine import ScoringEngine
 
-def test_pgeo_evaluation_transisi_tangguh():
+def test_pgeo_evaluation_strong_fundamental_sustainable():
     # Green geothermal profile with solid cash flow
     overview = {"description": "Pertamina Geothermal Energy operates clean PLTP geothermal plants."}
     financials = {
@@ -19,11 +19,12 @@ def test_pgeo_evaluation_transisi_tangguh():
 
     eval_result = ScoringEngine.evaluate(overview, financials, news, tkbi_matches)
     assert eval_result["quadrant_code"] == "Q1"
-    assert eval_result["quadrant"] == "Transisi Tangguh"
+    assert eval_result["quadrant"] == "STRONG FUNDAMENTAL AND SUSTAINABLE"
+    assert eval_result["quadrant_label"] == "High Green & High Viability"
     assert eval_result["consistency_score"] >= 60.0
     assert eval_result["viability_score"] >= 60.0
 
-def test_adro_evaluation_sumber_kas_konvensional():
+def test_adro_evaluation_greenwashing_risk_zone():
     # High cash generation, but thermal coal operations
     overview = {"description": "Adaro is an integrated coal mining and thermal coal logistics operator."}
     financials = {
@@ -40,11 +41,12 @@ def test_adro_evaluation_sumber_kas_konvensional():
 
     eval_result = ScoringEngine.evaluate(overview, financials, news, tkbi_matches)
     assert eval_result["quadrant_code"] == "Q3"
-    assert eval_result["quadrant"] == "Sumber Kas Konvensional"
+    assert eval_result["quadrant"] == "GREENWASHING RISK ZONE"
+    assert eval_result["quadrant_label"] == "Low Green & High Viability"
     assert eval_result["consistency_score"] < 60.0
     assert eval_result["viability_score"] >= 60.0
 
-def test_bren_evaluation_dampak_spekulatif():
+def test_bren_evaluation_sustainable_high_financial_risk():
     # Green profile but heavy debt / lower capex coverage
     overview = {"description": "Barito Renewables Energy develops wind and geothermal assets."}
     financials = {
@@ -61,11 +63,12 @@ def test_bren_evaluation_dampak_spekulatif():
 
     eval_result = ScoringEngine.evaluate(overview, financials, news, tkbi_matches)
     assert eval_result["quadrant_code"] == "Q2"
-    assert eval_result["quadrant"] == "Dampak Spekulatif"
+    assert eval_result["quadrant"] == "SUSTAINABLE BUT HIGH FINANCIAL RISK"
+    assert eval_result["quadrant_label"] == "High Green & Low Viability"
     assert eval_result["consistency_score"] >= 60.0
     assert eval_result["viability_score"] < 60.0
 
-def test_bumi_evaluation_tertinggal_red_flag():
+def test_bumi_evaluation_not_considered():
     # Distressed coal operator with negative ROA / low cash flow
     overview = {"description": "Bumi Resources is engaged in thermal coal extraction."}
     financials = {
@@ -82,6 +85,7 @@ def test_bumi_evaluation_tertinggal_red_flag():
 
     eval_result = ScoringEngine.evaluate(overview, financials, news, tkbi_matches)
     assert eval_result["quadrant_code"] == "Q4"
-    assert eval_result["quadrant"] == "Tertinggal & Red Flag"
+    assert eval_result["quadrant"] == "NOT CONSIDERED"
+    assert eval_result["quadrant_label"] == "Low Green & Low Viability"
     assert eval_result["consistency_score"] < 60.0
     assert eval_result["viability_score"] < 60.0

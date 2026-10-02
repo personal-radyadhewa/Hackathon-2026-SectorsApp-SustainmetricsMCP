@@ -202,33 +202,38 @@ class ScoringEngine:
             overview, financials, news, tkbi_matches
         )
 
-        # Quadrant classification
-        # Q1: Transisi Tangguh (Consistency >= 60 & Viability >= 60)
-        # Q2: Dampak Spekulatif (Consistency >= 60 & Viability < 60)
-        # Q3: Sumber Kas Konvensional (Consistency < 60 & Viability >= 60)
-        # Q4: Tertinggal & Red Flag (Consistency < 60 & Viability < 60)
+        # Quadrant classification (English Standard)
+        # Q1: STRONG FUNDAMENTAL AND SUSTAINABLE (Consistency >= 60 & Viability >= 60)
+        # Q2: SUSTAINABLE BUT HIGH FINANCIAL RISK (Consistency >= 60 & Viability < 60)
+        # Q3: GREENWASHING RISK ZONE (Consistency < 60 & Viability >= 60)
+        # Q4: NOT CONSIDERED (Consistency < 60 & Viability < 60)
         if consistency_score >= 60.0 and viability_score >= 60.0:
-            quadrant = "Transisi Tangguh"
+            quadrant = "STRONG FUNDAMENTAL AND SUSTAINABLE"
             quadrant_code = "Q1"
-            definition = "High green alignment backed by robust cash flow and Capex. True sustainable compounder."
+            label = "High Green & High Viability"
+            definition = "High green alignment backed by robust cash flow and Capex. True sustainable compounders."
         elif consistency_score >= 60.0 and viability_score < 60.0:
-            quadrant = "Dampak Spekulatif"
+            quadrant = "SUSTAINABLE BUT HIGH FINANCIAL RISK"
             quadrant_code = "Q2"
+            label = "High Green & Low Viability"
             definition = "High green narrative/alignment but fragile fundamentals (cash burn, high leverage). High execution risk."
         elif consistency_score < 60.0 and viability_score >= 60.0:
-            quadrant = "Sumber Kas Konvensional"
+            quadrant = "GREENWASHING RISK ZONE"
             quadrant_code = "Q3"
+            label = "Low Green & High Viability"
             definition = "High cash generation with legacy/fossil profile and low TKBI alignment. High greenwashing vulnerability if claiming green status."
         else:
-            quadrant = "Tertinggal & Red Flag"
+            quadrant = "NOT CONSIDERED"
             quadrant_code = "Q4"
-            definition = "Low green alignment + deteriorative fundamentals. High obsolescence and default risk."
+            label = "Low Green & Low Viability"
+            definition = "Low green alignment and deteriorative fundamentals. High obsolescence and default risk."
 
         top_match = tkbi_matches[0] if tkbi_matches else {}
 
         return {
             "quadrant": quadrant,
             "quadrant_code": quadrant_code,
+            "quadrant_label": label,
             "quadrant_definition": definition,
             "consistency_score": consistency_score,
             "viability_score": viability_score,

@@ -32,25 +32,34 @@ ax.axvline(x=60, color="#718096", linestyle="--", linewidth=1.5, alpha=0.8)
 ax.axhline(y=60, color="#718096", linestyle="--", linewidth=1.5, alpha=0.8)
 
 # Quadrant background zones
-ax.fill_between([60, 100], 60, 100, color="#48BB78", alpha=0.15, label="Q1: Transisi Tangguh (High Green & High Viability)")
-ax.fill_between([0, 60], 60, 100, color="#ECC94B", alpha=0.15, label="Q2: Dampak Spekulatif (High Green & Fragile Viability)")
-ax.fill_between([60, 100], 0, 60, color="#ED8936", alpha=0.15, label="Q3: Sumber Kas Konvensional (Low Green & High Cash)")
-ax.fill_between([0, 60], 0, 60, color="#F56565", alpha=0.15, label="Q4: Tertinggal & Red Flag (Low Green & Low Viability)")
+ax.fill_between([60, 100], 60, 100, color="#48BB78", alpha=0.15, label="Q1: STRONG FUNDAMENTAL AND SUSTAINABLE (High Green & High Viability)")
+ax.fill_between([0, 60], 60, 100, color="#ECC94B", alpha=0.15, label="Q2: SUSTAINABLE BUT HIGH FINANCIAL RISK (High Green & Low Viability)")
+ax.fill_between([60, 100], 0, 60, color="#ED8936", alpha=0.15, label="Q3: GREENWASHING RISK ZONE (Low Green & High Viability)")
+ax.fill_between([0, 60], 0, 60, color="#F56565", alpha=0.15, label="Q4: NOT CONSIDERED (Low Green & Low Viability)")
 
 # Quadrant watermark labels
-ax.text(80, 95, "Q1: TRANSISI TANGGUH\\n(Sustainable Compounders)", ha="center", va="top", fontsize=9, fontweight="bold", color="#22543D", alpha=0.8)
-ax.text(30, 95, "Q2: DAMPAK SPEKULATIF\\n(High Execution Risk)", ha="center", va="top", fontsize=9, fontweight="bold", color="#744210", alpha=0.8)
-ax.text(80, 5, "Q3: SUMBER KAS KONVENSIONAL\\n(Greenwashing Risk Zone)", ha="center", va="bottom", fontsize=9, fontweight="bold", color="#7B341E", alpha=0.8)
-ax.text(30, 5, "Q4: TERTINGGAL & RED FLAG\\n(High Obsolescence Risk)", ha="center", va="bottom", fontsize=9, fontweight="bold", color="#742A2A", alpha=0.8)
+ax.text(80, 95, "Q1: STRONG FUNDAMENTAL AND SUSTAINABLE\\n(High Green & High Viability)", ha="center", va="top", fontsize=9, fontweight="bold", color="#22543D", alpha=0.8)
+ax.text(30, 95, "Q2: SUSTAINABLE BUT HIGH FINANCIAL RISK\\n(High Green & Low Viability)", ha="center", va="top", fontsize=9, fontweight="bold", color="#744210", alpha=0.8)
+ax.text(80, 5, "Q3: GREENWASHING RISK ZONE\\n(Low Green & High Viability)", ha="center", va="bottom", fontsize=9, fontweight="bold", color="#7B341E", alpha=0.8)
+ax.text(30, 5, "Q4: NOT CONSIDERED\\n(Low Green & Low Viability)", ha="center", va="bottom", fontsize=9, fontweight="bold", color="#742A2A", alpha=0.8)
 
 # Plot tickers
-colors = {{"Transisi Tangguh": "#2F855A", "Dampak Spekulatif": "#D69E2E", "Sumber Kas Konvensional": "#DD6B20", "Tertinggal & Red Flag": "#E53E3E"}}
+colors = {{
+    "STRONG FUNDAMENTAL AND SUSTAINABLE": "#2F855A",
+    "SUSTAINABLE BUT HIGH FINANCIAL RISK": "#D69E2E",
+    "GREENWASHING RISK ZONE": "#DD6B20",
+    "NOT CONSIDERED": "#E53E3E",
+    "Transisi Tangguh": "#2F855A",
+    "Dampak Spekulatif": "#D69E2E",
+    "Sumber Kas Konvensional": "#DD6B20",
+    "Tertinggal & Red Flag": "#E53E3E",
+}}
 
 for item in results:
     ticker = item.get("ticker", "N/A")
     viability = item.get("viability_score", 0)
     consistency = item.get("consistency_score", 0)
-    quadrant = item.get("quadrant", "Tertinggal & Red Flag")
+    quadrant = item.get("quadrant", "NOT CONSIDERED")
     dot_color = colors.get(quadrant, "#4A5568")
 
     ax.scatter(viability, consistency, s=280, color=dot_color, edgecolors="black", linewidth=1.5, zorder=5)
