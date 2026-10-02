@@ -36,9 +36,12 @@ async def test_tkbi_query_tool():
 async def test_inspect_ticker_evidence_tool():
     res = await inspect_ticker_evidence("PGEO")
     assert res["ticker"] == "PGEO"
-    assert "financial_facts" in res
+    assert "tkbi_evidence_dossier" in res
     assert res["disclaimer"] == DISCLAIMER_TEXT
-    assert len(res["tkbi_screening_citations"]) > 0
+    dossier = res["tkbi_evidence_dossier"]
+    assert "pillar_1_technical_screening_criteria" in dossier
+    assert "pillar_4_capital_allocation_reality_check" in dossier
+    assert "Laporan Keberlanjutan PGEO 2024 hal." in dossier["pillar_1_technical_screening_criteria"]["proof_citation"]
 
 @pytest.mark.asyncio
 async def test_trigger_green_audit_end_to_end():
@@ -59,15 +62,17 @@ async def test_trigger_green_audit_end_to_end():
     assert status_res["status"] == "COMPLETED"
     assert len(status_res["results"]) == 2
 
-    # Check PGEO results (Q1 Transisi Tangguh)
+    # Check PGEO results (Q1 STRONG FUNDAMENTAL AND SUSTAINABLE)
     pgeo_res = next(r for r in status_res["results"] if r["ticker"] == "PGEO")
     assert pgeo_res["quadrant_code"] == "Q1"
+    assert pgeo_res["quadrant"] == "STRONG FUNDAMENTAL AND SUSTAINABLE"
     assert pgeo_res["consistency_score"] >= 60.0
     assert pgeo_res["viability_score"] >= 60.0
 
-    # Check ADRO results (Q3 Sumber Kas Konvensional)
+    # Check ADRO results (Q3 GREENWASHING RISK ZONE)
     adro_res = next(r for r in status_res["results"] if r["ticker"] == "ADRO")
     assert adro_res["quadrant_code"] == "Q3"
+    assert adro_res["quadrant"] == "GREENWASHING RISK ZONE"
     assert adro_res["consistency_score"] < 60.0
     assert adro_res["viability_score"] >= 60.0
 
@@ -78,7 +83,7 @@ async def test_visualize_green_audit_quadrant():
     res = await visualize_green_audit(chart_type="quadrant")
     assert res["chart_type"] == "quadrant"
     assert "plt.subplots" in res["executable_code"]
-    assert "Q1: Transisi Tangguh" in res["executable_code"]
+    assert "Q1: STRONG FUNDAMENTAL AND SUSTAINABLE" in res["executable_code"]
     assert res["disclaimer"] == DISCLAIMER_TEXT
 
 
@@ -101,4 +106,22 @@ async def test_visualize_green_audit_emiten_efforts():
     res_radar = await visualize_green_audit(chart_type="radar", ticker="PGEO")
     assert res_radar["chart_type"] == "radar"
     assert "polar=True" in res_radar["executable_code"]
+
+
+@pytest.mark.asyncio
+async def test_generate_tkbi_audit_checklist_page_proof(tmp_path):
+    from sustainmetric.server import generate_tkbi_audit_checklist
+    import openpyxl
+
+    res = await generate_tkbi_audit_checklist("PGEO", output_dir=str(tmp_path))
+    assert res["status"] == "SUCCESS"
+    excel_path = Path(res["file_generated"])
+    assert excel_path.exists()
+
+    wb = openpyxl.load_workbook(str(excel_path))
+    sheet = wb.active
+    # Row 2 is first criteria
+    bukti_val = sheet.cell(2, 11).value
+    assert "hal." in bukti_val
+    assert "Laporan Keberlanjutan PGEO 2024" in bukti_val
 

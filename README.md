@@ -11,10 +11,10 @@ Production-grade FastMCP Server auditing Indonesia Stock Exchange (IDX) equities
 - **Embedded TKBI 2024 Vector Store**: Zero C++ dependency vector store utilizing SQLite and NumPy cosine similarity for fast semantic retrieval of Technical Screening Criteria (TSC), Do No Significant Harm (DNSH), and Minimum Social Safeguards (MSS).
 - **Sectors API v2 Client**: Robust HTTP client with SHA-256 disk cache (7-day financials TTL, 24h news TTL) and offline fixture fallback to preserve the 1,000 credit budget.
 - **4-Quadrant Matrix Classifier**: Maps tickers on Consistency Score (0–100) vs Fundamental Viability Score (0–100):
-  - **Q1 - Transisi Tangguh**: High green alignment + robust cash flow.
-  - **Q2 - Dampak Spekulatif**: High green narrative + fragile fundamentals / high leverage.
-  - **Q3 - Sumber Kas Konvensional**: High cash generation + legacy fossil operations.
-  - **Q4 - Tertinggal & Red Flag**: Low green alignment + deteriorative fundamentals.
+  - **Q1 - STRONG FUNDAMENTAL AND SUSTAINABLE**: High Green & High Viability.
+  - **Q2 - SUSTAINABLE BUT HIGH FINANCIAL RISK**: High Green & Low Viability.
+  - **Q3 - GREENWASHING RISK ZONE**: Low Green & High Viability.
+  - **Q4 - NOT CONSIDERED**: Low Green & Low Viability.
 
 ---
 

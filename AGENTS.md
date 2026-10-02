@@ -72,12 +72,12 @@ System specification and operational directives for AI agents operating on or co
 
 Coordinates: `(Viability Score X ∈ [0, 100], Consistency Score Y ∈ [0, 100])`
 
-| Quadrant | Name | Criteria | Definition & Audit Verdict |
-| :--- | :--- | :--- | :--- |
-| **Q1** | **Transisi Tangguh** | `Consistency ≥ 60` ∧ `Viability ≥ 60` | High green alignment backed by robust cash flow and Capex. True sustainable compounders. |
-| **Q2** | **Dampak Spekulatif** | `Consistency ≥ 60` ∧ `Viability < 60` | High green narrative/alignment but fragile fundamentals (cash burn, high leverage). Execution risk. |
-| **Q3** | **Sumber Kas Konvensional** | `Consistency < 60` ∧ `Viability ≥ 60` | High cash generation with legacy/fossil profile and low TKBI alignment. High greenwashing vulnerability if claiming green status. |
-| **Q4** | **Tertinggal & Red Flag** | `Consistency < 60` ∧ `Viability < 60` | Low green alignment + deteriorative fundamentals. High obsolescence and default risk. |
+| Quadrant | Name | Label | Criteria | Definition & Audit Verdict |
+| :--- | :--- | :--- | :--- | :--- |
+| **Q1** | **STRONG FUNDAMENTAL AND SUSTAINABLE** | High Green & High Viability | `Consistency ≥ 60` ∧ `Viability ≥ 60` | High green alignment backed by robust cash flow and Capex. True sustainable compounders. |
+| **Q2** | **SUSTAINABLE BUT HIGH FINANCIAL RISK** | High Green & Low Viability | `Consistency ≥ 60` ∧ `Viability < 60` | High green narrative/alignment but fragile fundamentals (cash burn, high leverage). Execution risk. |
+| **Q3** | **GREENWASHING RISK ZONE** | Low Green & High Viability | `Consistency < 60` ∧ `Viability ≥ 60` | High cash generation with legacy/fossil profile and low TKBI alignment. High greenwashing vulnerability if claiming green status. |
+| **Q4** | **NOT CONSIDERED** | Low Green & Low Viability | `Consistency < 60` ∧ `Viability < 60` | Low green alignment + deteriorative fundamentals. High obsolescence and default risk. |
 
 ---
 
@@ -108,7 +108,8 @@ Coordinates: `(Viability Score X ∈ [0, 100], Consistency Score Y ∈ [0, 100])
     "results": [
       {
         "ticker": "PGEO",
-        "quadrant": "Transisi Tangguh",
+        "quadrant": "STRONG FUNDAMENTAL AND SUSTAINABLE",
+        "quadrant_label": "High Green & High Viability",
         "consistency_score": 88.5,
         "viability_score": 76.2,
         "tkbi_alignment": {

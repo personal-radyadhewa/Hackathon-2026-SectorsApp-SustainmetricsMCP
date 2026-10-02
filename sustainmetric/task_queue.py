@@ -13,6 +13,10 @@ import uuid
 from pathlib import Path
 from typing import Any, Optional
 
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 from sustainmetric.scoring_engine import ScoringEngine
 from sustainmetric.sectors_client import SectorsClient
 from sustainmetric.tkbi_vector_store import TKBIVectorStore

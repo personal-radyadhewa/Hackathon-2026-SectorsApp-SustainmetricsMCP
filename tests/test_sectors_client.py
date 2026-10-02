@@ -17,7 +17,7 @@ def clean_test_cache():
 
 @pytest.mark.asyncio
 async def test_sectors_client_fixture_fallback():
-    client = SectorsClient(api_key=None, cache_dir=TEST_CACHE_DIR, use_fixtures_fallback=True)
+    client = SectorsClient(api_key="", cache_dir=TEST_CACHE_DIR, use_fixtures_fallback=True)
     report = await client.get_company_report("PGEO")
     assert report["symbol"] == "PGEO"
     assert "financials" in report
@@ -32,7 +32,7 @@ async def test_sectors_client_fixture_fallback():
 
 @pytest.mark.asyncio
 async def test_sectors_client_news_fixture():
-    client = SectorsClient(api_key=None, cache_dir=TEST_CACHE_DIR, use_fixtures_fallback=True)
+    client = SectorsClient(api_key="", cache_dir=TEST_CACHE_DIR, use_fixtures_fallback=True)
     news = await client.get_company_news("ADRO")
     assert len(news) > 0
     assert "Adaro" in news[0]["title"]

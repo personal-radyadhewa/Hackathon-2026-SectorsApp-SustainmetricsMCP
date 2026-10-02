@@ -33,7 +33,11 @@ class SectorsClient:
         cache_dir: Optional[Path] = None,
         use_fixtures_fallback: bool = True,
     ):
-        self.api_key = api_key or os.getenv("SECTORS_API_KEY")
+        if api_key is not None:
+            self.api_key = api_key if api_key != "" else None
+        else:
+            self.api_key = os.getenv("SECTORS_API_KEY")
+
         self.base_url = "https://api.sectors.app/v2"
         self.cache_dir = cache_dir or CACHE_DIR_DEFAULT
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -70,7 +74,8 @@ class SectorsClient:
             logger.warning(f"Cache write error for {cache_key}: {e}")
 
     def _load_fixture(self, ticker: str) -> Optional[dict[str, Any]]:
-        fixture_path = FIXTURES_DIR / f"{ticker.upper()}.json"
+        clean_sym = ticker.upper().replace(".JK", "")
+        fixture_path = FIXTURES_DIR / f"{clean_sym}.json"
         if fixture_path.exists():
             with open(fixture_path, "r", encoding="utf-8") as f:
                 return json.load(f)
@@ -82,7 +87,9 @@ class SectorsClient:
             return {}
 
         payload = dict(raw_payload)
-        symbol = str(payload.get("symbol", "")).upper()
+        raw_symbol = str(payload.get("symbol", "")).upper()
+        symbol = raw_symbol.replace(".JK", "")
+        payload["symbol"] = symbol
         company_name = payload.get("company_name") or payload.get("overview", {}).get("company_name", symbol)
 
         overview = dict(payload.get("overview", {}))
