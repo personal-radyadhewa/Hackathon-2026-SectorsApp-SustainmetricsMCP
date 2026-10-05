@@ -8,6 +8,7 @@ Outputs standard '{emiten}_audit_TKBI.xlsx' conforming to Template_Audit_TKBI.xl
 """
 
 from pathlib import Path
+import re
 from typing import Any
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -269,7 +270,11 @@ def generate_tkbi_audit_excel(
     for r_i in range(2, len(audit_rows) + 2):
         ws.row_dimensions[r_i].height = 36
 
-    out_path = Path(output_dir) / f"{clean_ticker}_audit_TKBI.xlsx"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    clean_sym = re.sub(r"[^A-Z0-9]", "", clean_ticker.replace(".JK", ""))
+    if not clean_sym:
+        clean_sym = "EMITEN"
+    dest_dir = Path(output_dir).resolve()
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    out_path = dest_dir / f"{clean_sym}_audit_TKBI.xlsx"
     wb.save(str(out_path))
     return out_path

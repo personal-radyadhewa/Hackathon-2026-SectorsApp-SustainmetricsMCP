@@ -5,8 +5,10 @@ to audit IDX equities against greenwashing risks using OJK TKBI 2024.
 """
 
 import argparse
+import re
 import sys
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -29,6 +31,56 @@ sectors_client = SectorsClient()
 vector_store = TKBIVectorStore()
 task_queue = TaskQueue(sectors_client=sectors_client, vector_store=vector_store)
 
+TICKER_REGEX = re.compile(r"^[A-Z0-9]{4,6}(\.JK)?$")
+
+
+def validate_ticker(ticker: Any) -> tuple[Optional[str], Optional[str]]:
+    """Validate and normalize ticker format. Returns (clean_ticker, error_msg)."""
+    if not isinstance(ticker, str):
+        return None, "Ticker must be a string."
+    cleaned = ticker.strip().upper()
+    if not cleaned:
+        return None, "Ticker cannot be empty."
+    if not TICKER_REGEX.match(cleaned):
+        return None, f"Invalid ticker format '{ticker}'. Must be 4-6 alphanumeric characters (optional .JK suffix)."
+    return cleaned, None
+
+
+def validate_ticker_list(tickers: Any) -> tuple[list[str], Optional[str]]:
+    """Validate, normalize, and bound ticker list. Returns (clean_tickers, error_msg)."""
+    if not isinstance(tickers, list) or len(tickers) == 0:
+        return [], "At least one ticker must be provided as a non-empty list."
+
+    cleaned_list: list[str] = []
+    for t in tickers:
+        clean, err = validate_ticker(t)
+        if err:
+            return [], err
+        if clean and clean not in cleaned_list:
+            cleaned_list.append(clean)
+
+    if not cleaned_list:
+        return [], "No valid tickers provided after trimming."
+    if len(cleaned_list) > 50:
+        return [], f"Batch size exceeds maximum limit of 50 tickers (received {len(cleaned_list)})."
+    return cleaned_list, None
+
+
+def validate_top_k(top_k: Any, default: int = 3, min_val: int = 1, max_val: int = 20) -> int:
+    """Clamp top_k to safe integer bounds [min_val, max_val]."""
+    try:
+        val = int(top_k)
+        return max(min_val, min(val, max_val))
+    except (ValueError, TypeError):
+        return default
+
+
+def safe_resolve_export_dir(output_dir: str) -> Path:
+    """Resolve and ensure safe output directory to prevent path traversal."""
+    target = Path(output_dir).resolve()
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
 
 @mcp.tool()
 async def trigger_green_audit(tickers: list[str]) -> dict[str, Any]:
@@ -37,13 +89,13 @@ async def trigger_green_audit(tickers: list[str]) -> dict[str, Any]:
     Accepts stock tickers (e.g. ['PGEO', 'ADRO', 'BBRI', 'BREN']), creates a durable background task,
     and returns immediately with a task_id to prevent agent protocol timeouts.
     """
-    if not tickers:
+    clean_tickers, err = validate_ticker_list(tickers)
+    if err:
         return {
-            "error": "At least one ticker must be provided.",
+            "error": err,
             "disclaimer": DISCLAIMER_TEXT,
         }
 
-    clean_tickers = [t.strip().upper() for t in tickers if t.strip()]
     task_id = task_queue.create_task(clean_tickers)
 
     return {
@@ -63,10 +115,16 @@ def get_audit_status(task_id: str) -> dict[str, Any]:
     Returns status ('QUEUED', 'PROCESSING', 'COMPLETED', or 'FAILED') along with
     the 4-quadrant matrix coordinates, consistency score, viability score, and audit findings.
     """
-    task = task_queue.get_task_status(task_id)
+    if not task_id or not isinstance(task_id, str) or not task_id.strip():
+        return {
+            "error": "Invalid task_id: must be a non-empty string.",
+            "disclaimer": DISCLAIMER_TEXT,
+        }
+    clean_id = task_id.strip()
+    task = task_queue.get_task_status(clean_id)
     if not task:
         return {
-            "error": f"Task ID '{task_id}' not found.",
+            "error": f"Task ID '{clean_id}' not found.",
             "disclaimer": DISCLAIMER_TEXT,
         }
     return task
@@ -78,7 +136,12 @@ def cancel_audit_task(task_id: str) -> dict[str, Any]:
     
     Accepts task_id and terminates the background processing worker.
     """
-    res = task_queue.cancel_task(task_id)
+    if not task_id or not isinstance(task_id, str) or not task_id.strip():
+        return {
+            "error": "Invalid task_id: must be a non-empty string.",
+            "disclaimer": DISCLAIMER_TEXT,
+        }
+    res = task_queue.cancel_task(task_id.strip())
     res["disclaimer"] = DISCLAIMER_TEXT
     return res
 
@@ -90,9 +153,17 @@ def query_tkbi_knowledge_base(query: str, top_k: int = 3) -> dict[str, Any]:
     Query specific sector guidelines, Technical Screening Criteria (TSC), Do No Significant Harm (DNSH),
     and Minimum Social Safeguards (MSS) for energy, coal transition, renewables, or banking.
     """
-    results = vector_store.search(query, top_k=top_k)
+    clean_query = (query or "").strip()
+    if not clean_query:
+        return {
+            "error": "Query string cannot be empty.",
+            "disclaimer": DISCLAIMER_TEXT,
+        }
+    clamped_k = validate_top_k(top_k, default=3, min_val=1, max_val=20)
+    results = vector_store.search(clean_query, top_k=clamped_k)
     return {
-        "query": query,
+        "query": clean_query,
+        "top_k": clamped_k,
         "total_matches": len(results),
         "results": results,
         "disclaimer": DISCLAIMER_TEXT,
@@ -110,7 +181,9 @@ async def inspect_ticker_evidence(ticker: str) -> dict[str, Any]:
     4. Capital Allocation Reality Check (OCF, Capex coverage, greenwashing flags).
     Includes verified corporate document and page citations.
     """
-    sym = ticker.strip().upper()
+    sym, err = validate_ticker(ticker)
+    if err:
+        return {"error": err, "disclaimer": DISCLAIMER_TEXT}
     try:
         report = await sectors_client.get_company_report(sym)
         news = await sectors_client.get_company_news(sym)
@@ -237,9 +310,17 @@ async def visualize_green_audit(
     """
     audit_data: Any = []
 
+    valid_types = ["quadrant", "green_effort", "financial_coverage", "radar"]
+    if chart_type not in valid_types:
+        return {
+            "error": f"Invalid chart_type '{chart_type}'. Supported types: {valid_types}.",
+            "disclaimer": DISCLAIMER_TEXT,
+        }
+
     # Priority 1: Pull from task_id if provided
     if task_id:
-        task = task_queue.get_task_status(task_id)
+        clean_task_id = str(task_id).strip()
+        task = task_queue.get_task_status(clean_task_id)
         if task and "results" in task:
             audit_data = task["results"]
         elif task and "error" in task:
@@ -247,7 +328,9 @@ async def visualize_green_audit(
 
     # Priority 2: Single ticker lookup if no task_id or specific ticker requested
     if not audit_data and ticker:
-        clean_ticker = ticker.strip().upper()
+        clean_ticker, err = validate_ticker(ticker)
+        if err:
+            return {"error": err, "disclaimer": DISCLAIMER_TEXT}
         # Fetch report and news to evaluate
         try:
             report = await sectors_client.get_company_report(clean_ticker)
@@ -318,7 +401,12 @@ async def generate_tkbi_audit_checklist(
     - sector: Optional explicit sector override (e.g. 'Energi', 'Manufaktur', 'Konstruksi dan Real Estat').
     - output_dir: Destination directory for generated spreadsheet (defaults to current directory).
     """
-    clean_ticker = ticker.strip().upper()
+    clean_ticker, err = validate_ticker(ticker)
+    if err:
+        return {"error": err, "disclaimer": DISCLAIMER_TEXT}
+
+    safe_dir = safe_resolve_export_dir(output_dir)
+
     try:
         report = await sectors_client.get_company_report(clean_ticker)
         news = await sectors_client.get_company_news(clean_ticker)
@@ -342,7 +430,7 @@ async def generate_tkbi_audit_checklist(
             tkbi_matches=matches,
             consistency_score=c_score,
             sector=sector,
-            output_dir=output_dir,
+            output_dir=str(safe_dir),
         )
 
         return {

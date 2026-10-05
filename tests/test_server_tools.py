@@ -125,3 +125,60 @@ async def test_generate_tkbi_audit_checklist_page_proof(tmp_path):
     assert "hal." in bukti_val
     assert "Laporan Keberlanjutan PGEO 2024" in bukti_val
 
+
+@pytest.mark.asyncio
+async def test_input_validation_trigger_green_audit():
+    # Empty list
+    res_empty = await trigger_green_audit([])
+    assert "error" in res_empty
+    assert "At least one ticker" in res_empty["error"]
+
+    # Only whitespace / empty strings
+    res_whitespace = await trigger_green_audit(["   ", ""])
+    assert "error" in res_whitespace
+
+    # Malformed ticker
+    res_bad = await trigger_green_audit(["INVALID$$$", "PGEO"])
+    assert "error" in res_bad
+    assert "Invalid ticker format" in res_bad["error"]
+
+    # Exceeding batch limit (> 50)
+    res_oversized = await trigger_green_audit([f"TICK{i:02d}" for i in range(55)])
+    assert "error" in res_oversized
+    assert "exceeds maximum limit" in res_oversized["error"]
+
+
+def test_input_validation_query_tkbi():
+    # Empty query
+    res_empty = query_tkbi_knowledge_base("   ")
+    assert "error" in res_empty
+    assert "cannot be empty" in res_empty["error"]
+
+    # top_k bounds clamping
+    res_clamped = query_tkbi_knowledge_base("geothermal", top_k=999)
+    assert res_clamped["top_k"] == 20
+    assert len(res_clamped["results"]) <= 20
+
+    res_negative = query_tkbi_knowledge_base("geothermal", top_k=-5)
+    assert res_negative["top_k"] == 1
+
+
+@pytest.mark.asyncio
+async def test_input_validation_inspect_evidence():
+    res_malformed = await inspect_ticker_evidence("BAD!TICKER")
+    assert "error" in res_malformed
+    assert "Invalid ticker format" in res_malformed["error"]
+
+
+@pytest.mark.asyncio
+async def test_input_validation_visualize():
+    from sustainmetric.server import visualize_green_audit
+    res_invalid_chart = await visualize_green_audit(chart_type="nonexistent_type")
+    assert "error" in res_invalid_chart
+    assert "Invalid chart_type" in res_invalid_chart["error"]
+
+    res_bad_ticker = await visualize_green_audit(chart_type="quadrant", ticker="INVALID@123")
+    assert "error" in res_bad_ticker
+    assert "Invalid ticker format" in res_bad_ticker["error"]
+
+
