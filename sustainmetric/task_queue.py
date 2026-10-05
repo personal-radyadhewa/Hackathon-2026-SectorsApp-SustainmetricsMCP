@@ -28,7 +28,7 @@ DISCLAIMER_TEXT = "Information & Analysis Tool Only. Not Financial Advice or Inv
 
 
 class TaskQueue:
-    """Manages asynchronous audit tasks with SQLite persistence."""
+    """Manages asynchronous audit tasks with SQLite persistence, startup recovery, and partial-failure resilience."""
 
     def __init__(
         self,
@@ -40,7 +40,9 @@ class TaskQueue:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.sectors_client = sectors_client or SectorsClient()
         self.vector_store = vector_store or TKBIVectorStore()
+        self._running_tasks: dict[str, asyncio.Task] = {}
         self._init_db()
+        self.recover_interrupted_tasks()
 
     def _get_connection(self) -> sqlite3.Connection:
         return sqlite3.connect(str(self.db_path))
@@ -65,6 +67,42 @@ class TaskQueue:
         finally:
             conn.close()
 
+    def recover_interrupted_tasks(self) -> list[str]:
+        """Recover tasks left in QUEUED or PROCESSING across process restarts."""
+        conn = self._get_connection()
+        recovered_ids: list[str] = []
+        try:
+            cursor = conn.execute(
+                "SELECT task_id, tickers, status FROM audit_tasks WHERE status IN ('QUEUED', 'PROCESSING')"
+            )
+            pending = cursor.fetchall()
+        finally:
+            conn.close()
+
+        for tid, tickers_raw, old_status in pending:
+            try:
+                tickers = json.loads(tickers_raw)
+                logger.info(f"Recovering task {tid} (previous status: {old_status}) with {len(tickers)} tickers.")
+                self._spawn_worker(tid, tickers)
+                recovered_ids.append(tid)
+            except Exception as e:
+                logger.warning(f"Could not recover task {tid}: {e}")
+                self._update_status(tid, "FAILED", error=f"Recovery failed: {str(e)}")
+
+        return recovered_ids
+
+    def _spawn_worker(self, task_id: str, tickers: list[str]) -> None:
+        """Spawn worker task on current running loop or synchronous fallback."""
+        try:
+            loop = asyncio.get_running_loop()
+            task = loop.create_task(self._execute_audit(task_id, tickers))
+            self._running_tasks[task_id] = task
+        except RuntimeError:
+            try:
+                asyncio.run(self._execute_audit(task_id, tickers))
+            except Exception as e:
+                logger.error(f"Failed synchronous execution for task {task_id}: {e}")
+
     def create_task(self, tickers: list[str]) -> str:
         """Create new queued audit task and persist in SQLite."""
         task_id = str(uuid.uuid4())
@@ -84,15 +122,32 @@ class TaskQueue:
         finally:
             conn.close()
 
-        # Spawn background execution
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._execute_audit(task_id, clean_tickers))
-        except RuntimeError:
-            # If no running loop in current thread, execute sync or spawn thread
-            asyncio.run(self._execute_audit(task_id, clean_tickers))
-
+        self._spawn_worker(task_id, clean_tickers)
         return task_id
+
+    def cancel_task(self, task_id: str) -> dict[str, Any]:
+        """Cancel an in-progress or queued audit task."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.execute("SELECT status FROM audit_tasks WHERE task_id = ?", (task_id,))
+            row = cursor.fetchone()
+        finally:
+            conn.close()
+
+        if not row:
+            return {"task_id": task_id, "status": "NOT_FOUND", "message": f"Task '{task_id}' not found."}
+
+        current_status = row[0]
+        if current_status in ["COMPLETED", "FAILED", "CANCELLED"]:
+            return {"task_id": task_id, "status": current_status, "message": f"Task already in terminal state '{current_status}'."}
+
+        if task_id in self._running_tasks:
+            t = self._running_tasks[task_id]
+            if not t.done():
+                t.cancel()
+
+        self._update_status(task_id, "CANCELLED", error="Task cancelled by user or agent.")
+        return {"task_id": task_id, "status": "CANCELLED", "message": f"Task '{task_id}' successfully cancelled."}
 
     def get_task_status(self, task_id: str) -> Optional[dict[str, Any]]:
         """Retrieve task state and results if completed."""
@@ -124,43 +179,94 @@ class TaskQueue:
 
         if status == "COMPLETED":
             response["results"] = results
-        elif status == "FAILED":
+            failed_tickers = [r for r in (results or []) if r.get("status") == "FAILED"]
+            if failed_tickers:
+                response["partial_failures"] = failed_tickers
+        elif status in ["FAILED", "CANCELLED"]:
             response["error"] = error
+            if results:
+                response["results"] = results
 
         return response
 
     async def _execute_audit(self, task_id: str, tickers: list[str]) -> None:
-        """Background worker executing fundamental and TKBI 2024 green audit."""
+        """Background worker executing fundamental and TKBI 2024 green audit with ticker-level resilience."""
         self._update_status(task_id, "PROCESSING")
         results = []
 
         try:
             for ticker in tickers:
-                report = await self.sectors_client.get_company_report(ticker)
-                news = await self.sectors_client.get_company_news(ticker)
+                # Check for cancellation before each ticker
+                task_info = self.get_task_status(task_id)
+                if task_info and task_info.get("status") == "CANCELLED":
+                    logger.info(f"Task {task_id} was cancelled; stopping audit worker.")
+                    return
 
-                overview = report.get("overview", {})
-                financials = report.get("financials", {})
+                # Per-ticker retry loop with exponential backoff
+                report = None
+                news = None
+                last_err = None
+                for attempt in range(2):
+                    try:
+                        report = await self.sectors_client.get_company_report(ticker)
+                        news = await self.sectors_client.get_company_news(ticker)
+                        break
+                    except Exception as exc:
+                        last_err = exc
+                        await asyncio.sleep(0.1 * (2 ** attempt))
 
-                # Semantic search in TKBI 2024 database
-                news_titles = " ".join([n.get("title", "") for n in news[:3]]) if news else ""
-                query_context = f"{ticker} {overview.get('company_name', '')} {overview.get('industry', '')} {overview.get('subsector', '')} {overview.get('description', '')} {news_titles}".strip()
-                tkbi_matches = self.vector_store.search(query_context, top_k=2)
+                if report is None or last_err is not None and news is None:
+                    logger.warning(f"Ticker audit failed for {ticker} in task {task_id}: {last_err}")
+                    results.append({
+                        "ticker": ticker,
+                        "status": "FAILED",
+                        "error": str(last_err),
+                    })
+                    continue
 
-                # Quantitative evaluation
-                eval_data = ScoringEngine.evaluate(overview, financials, news, tkbi_matches)
+                try:
+                    overview = report.get("overview", {})
+                    financials = report.get("financials", {})
 
-                results.append({
-                    "ticker": ticker,
-                    "company_name": overview.get("company_name", ticker),
-                    "subsector": overview.get("subsector", "N/A"),
-                    **eval_data,
-                })
+                    # Semantic search in TKBI 2024 database
+                    news_titles = " ".join([n.get("title", "") for n in news[:3]]) if news else ""
+                    query_context = f"{ticker} {overview.get('company_name', '')} {overview.get('industry', '')} {overview.get('subsector', '')} {overview.get('description', '')} {news_titles}".strip()
+                    tkbi_matches = self.vector_store.search(query_context, top_k=2)
 
-            self._update_status(task_id, "COMPLETED", results=results)
+                    # Quantitative evaluation
+                    eval_data = ScoringEngine.evaluate(overview, financials, news, tkbi_matches)
+
+                    results.append({
+                        "ticker": ticker,
+                        "status": "SUCCESS",
+                        "company_name": overview.get("company_name", ticker),
+                        "subsector": overview.get("subsector", "N/A"),
+                        **eval_data,
+                    })
+                except Exception as eval_err:
+                    logger.warning(f"Evaluation failed for ticker {ticker}: {eval_err}")
+                    results.append({
+                        "ticker": ticker,
+                        "status": "FAILED",
+                        "error": str(eval_err),
+                    })
+
+            # Check if all failed or partial
+            all_failed = results and all(r.get("status") == "FAILED" for r in results)
+            if all_failed:
+                self._update_status(task_id, "FAILED", results=results, error="All tickers in batch failed audit.")
+            else:
+                self._update_status(task_id, "COMPLETED", results=results)
+
+        except asyncio.CancelledError:
+            logger.info(f"Audit task {task_id} coroutine cancelled.")
+            self._update_status(task_id, "CANCELLED", results=results, error="Worker cancelled.")
+            raise
         except Exception as e:
-            logger.exception(f"Audit task {task_id} failed: {e}")
-            self._update_status(task_id, "FAILED", error=str(e))
+            logger.exception(f"Audit task {task_id} crashed: {e}")
+            self._update_status(task_id, "FAILED", results=results, error=str(e))
+        finally:
+            self._running_tasks.pop(task_id, None)
 
     def _update_status(
         self,

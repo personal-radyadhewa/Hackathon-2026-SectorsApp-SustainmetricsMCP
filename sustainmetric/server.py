@@ -73,6 +73,17 @@ def get_audit_status(task_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def cancel_audit_task(task_id: str) -> dict[str, Any]:
+    """Cancel an in-progress or queued background audit task.
+    
+    Accepts task_id and terminates the background processing worker.
+    """
+    res = task_queue.cancel_task(task_id)
+    res["disclaimer"] = DISCLAIMER_TEXT
+    return res
+
+
+@mcp.tool()
 def query_tkbi_knowledge_base(query: str, top_k: int = 3) -> dict[str, Any]:
     """Semantically search the official OJK TKBI 2024 Sustainable Finance Taxonomy.
     
