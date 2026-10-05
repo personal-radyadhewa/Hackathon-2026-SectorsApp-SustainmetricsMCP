@@ -103,21 +103,29 @@ class ScoringEngine:
         score = 0.0
 
         subsector = str(overview.get("subsector", "")).lower()
+        sub_industry = str(overview.get("sub_industry", "")).lower()
         industry = str(overview.get("industry", "")).lower()
         desc = str(overview.get("description", "")).lower()
         all_text = " ".join([f"{n.get('title', '')} {n.get('summary', '')}" for n in news]).lower()
-        full_text = f"{all_text} {desc} {subsector} {industry}"
+        full_text = f"{all_text} {desc} {subsector} {industry} {sub_industry}"
 
         # 1. Base Taxonomy Alignment (Max 45 pts)
         top_match = tkbi_matches[0] if tkbi_matches else None
+        top_similarity = float(top_match.get("similarity_score", 0.0)) if top_match else 0.0
         raw_criteria_level = top_match.get("criteria_level") if top_match else "Merah"
 
         # Guardrail: Mining/extracting unabated coal fails TKBI transition criteria
-        is_coal_extractor = any(k in subsector or k in industry or k in desc for k in ["coal mining", "thermal coal", "tambang batubara"])
+        is_coal_extractor = any(
+            k in subsector or k in industry or k in sub_industry or k in desc
+            for k in ["coal", "batubara", "lignite", "anthracite"]
+        )
         if is_coal_extractor:
             # TKBI 2024 only grants 'Transisi' for binding early retirement of power plants, NOT coal mining
             criteria_level = "Merah"
             findings.append("Core operations involve unabated thermal coal extraction; fails TKBI 2024 technical criteria.")
+        elif top_similarity < 0.04:
+            criteria_level = "Merah"
+            findings.append(f"TKBI taxonomy match confidence is low ({top_similarity:.2f}); falls outside verified green screening criteria.")
         else:
             criteria_level = raw_criteria_level
 

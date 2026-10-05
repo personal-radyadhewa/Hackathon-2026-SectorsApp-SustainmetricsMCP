@@ -311,11 +311,14 @@ async def generate_tkbi_audit_checklist(
     try:
         report = await sectors_client.get_company_report(clean_ticker)
         news = await sectors_client.get_company_news(clean_ticker)
-        matches = vector_store.search(clean_ticker, top_k=3)
+        overview = report.get("overview", {})
+        news_titles = " ".join([n.get("title", "") for n in news[:3]]) if news else ""
+        query_context = f"{clean_ticker} {overview.get('company_name', '')} {overview.get('industry', '')} {overview.get('subsector', '')} {overview.get('description', '')} {news_titles}".strip()
+        matches = vector_store.search(query_context, top_k=3)
 
         from sustainmetric.scoring_engine import ScoringEngine
         c_score, _ = ScoringEngine.calculate_consistency_score(
-            report.get("overview", {}),
+            overview,
             report.get("financials", {}),
             news,
             matches,

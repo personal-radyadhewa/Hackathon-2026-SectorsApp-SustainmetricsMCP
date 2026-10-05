@@ -143,7 +143,8 @@ class TaskQueue:
                 financials = report.get("financials", {})
 
                 # Semantic search in TKBI 2024 database
-                query_context = f"{ticker} {overview.get('industry', '')} {overview.get('subsector', '')} {overview.get('description', '')}"
+                news_titles = " ".join([n.get("title", "") for n in news[:3]]) if news else ""
+                query_context = f"{ticker} {overview.get('company_name', '')} {overview.get('industry', '')} {overview.get('subsector', '')} {overview.get('description', '')} {news_titles}".strip()
                 tkbi_matches = self.vector_store.search(query_context, top_k=2)
 
                 # Quantitative evaluation

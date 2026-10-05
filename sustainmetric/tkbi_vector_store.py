@@ -35,13 +35,16 @@ def _deterministic_offline_embed(text: str, dim: int = VECTOR_DIM) -> np.ndarray
         ngrams.append(f"{tokens[i]}_{tokens[i+1]}")
 
     for token in ngrams:
-        # 3 independent hash projections for collision reduction
+        # 3 independent hash projections with sign bits for zero-mean collision cancellation
         h1 = int(hashlib.md5(token.encode("utf-8")).hexdigest()[:8], 16) % dim
+        s1 = 1.0 if int(hashlib.md5(token.encode("utf-8")).hexdigest()[-1], 16) % 2 == 0 else -1.0
         h2 = int(hashlib.sha1(token.encode("utf-8")).hexdigest()[:8], 16) % dim
+        s2 = 1.0 if int(hashlib.sha1(token.encode("utf-8")).hexdigest()[-1], 16) % 2 == 0 else -1.0
         h3 = int(hashlib.sha256(token.encode("utf-8")).hexdigest()[:8], 16) % dim
-        vec[h1] += 1.0
-        vec[h2] += 0.5
-        vec[h3] += 0.25
+        s3 = 1.0 if int(hashlib.sha256(token.encode("utf-8")).hexdigest()[-1], 16) % 2 == 0 else -1.0
+        vec[h1] += s1 * 1.0
+        vec[h2] += s2 * 0.5
+        vec[h3] += s3 * 0.25
 
     norm = np.linalg.norm(vec)
     if norm > 0:
@@ -55,7 +58,8 @@ class TKBIVectorStore:
     def __init__(self, db_path: Optional[Path] = None, openai_api_key: Optional[str] = None):
         self.db_path = db_path or DB_PATH_DEFAULT
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+        raw_key = (openai_api_key if openai_api_key is not None else os.getenv("OPENAI_API_KEY", "")).strip()
+        self.openai_api_key = raw_key if raw_key and not raw_key.startswith("******") and not raw_key.startswith("http") else None
         self._init_db()
         self.seed_defaults_if_empty()
 
@@ -101,8 +105,9 @@ class TKBIVectorStore:
                     arr = np.array(raw_emb, dtype=np.float32)
                     norm = np.linalg.norm(arr)
                     return arr / norm if norm > 0 else arr
+                logger.warning("OpenAI embedding API returned status %s; falling back to offline", resp.status_code)
             except Exception as e:
-                logger.warning(f"OpenAI embedding call failed, falling back to offline: {e}")
+                logger.warning("OpenAI embedding call failed (%s); falling back to offline", type(e).__name__)
 
         return _deterministic_offline_embed(text, VECTOR_DIM)
 
@@ -184,7 +189,7 @@ class TKBIVectorStore:
                 "tsc": tsc,
                 "dnsh": dnsh,
                 "mss": mss,
-                "similarity_score": round(max(0.0, min(1.0, (sim + 1.0) / 2.0)), 4),
+                "similarity_score": round(max(0.0, min(1.0, sim)), 4),
             })
 
         results.sort(key=lambda x: x["similarity_score"], reverse=True)
