@@ -64,3 +64,31 @@ async def test_generate_tkbi_audit_checklist_pgeo(tmp_path: Path):
     first_data_row = [ws.cell(2, c).value for c in range(1, 13)]
     assert first_data_row[0] == "PGEO"
     assert first_data_row[7] in ["HIJAU", "TRANSISI", "TIDAK"]
+    # Check that reasoning and feedback contain preliminary / unverified labels
+    assert "[Skrining Awal Heuristik]" in str(first_data_row[9])
+    assert "UNVERIFIED" in str(first_data_row[10])
+    assert "PRELIMINARY_HEURISTIC" in str(first_data_row[11])
+
+
+def test_evaluate_criterion_preliminary_and_unverified_labels():
+    from sustainmetric.audit_exporter import evaluate_criterion_for_emiten
+    mock_item = {
+        "bab": "Pembangkitan Tenaga Listrik",
+        "kbli": "35101",
+        "tsc_id": "TSC-ENE-01",
+        "tsc": "Life-cycle GHG < 100g CO2e/kWh",
+        "bentuk_jawaban": ["HIJAU", "TRANSISI", "TIDAK"],
+    }
+    report = {
+        "symbol": "PGEO",
+        "overview": {"subsector": "Utilities", "description": "Geothermal power plant"},
+        "financials": {},
+    }
+    eval_res = evaluate_criterion_for_emiten("PGEO", mock_item, report, [], [], consistency_score=75.0)
+
+    assert eval_res["audit_tier"] == "PRELIMINARY_HEURISTIC"
+    assert eval_res["verification_status"] == "UNVERIFIED"
+    assert "https://sectors.app/company/PGEO" in eval_res["bukti"]
+    assert "UNVERIFIED" in eval_res["bukti"]
+    assert "[Skrining Awal Heuristik]" in eval_res["reasoning"]
+    assert "PRELIMINARY_HEURISTIC" in eval_res["auditor_feedback"]
