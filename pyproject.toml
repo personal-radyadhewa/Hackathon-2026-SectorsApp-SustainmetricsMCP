@@ -1,6 +1,6 @@
 [project]
 name = "sustainmetric-idx"
-version = "0.1.0"
+version = "0.1.1"
 description = "Algorithmic Greenwashing Auditor & Fundamental Viability Evaluator for Indonesia Stock Exchange (IDX) Equities via OJK TKBI Versi 3"
 readme = "README.md"
 requires-python = ">=3.11"
