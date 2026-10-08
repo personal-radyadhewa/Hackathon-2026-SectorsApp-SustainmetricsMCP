@@ -1,7 +1,7 @@
 [project]
 name = "sustainmetric-idx"
 version = "0.1.0"
-description = "SustainMetric IDX: The Algorithmic Green Auditor FastMCP Server"
+description = "Algorithmic Greenwashing Auditor & Fundamental Viability Evaluator for Indonesia Stock Exchange (IDX) Equities via OJK TKBI Versi 3"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
