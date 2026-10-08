@@ -249,6 +249,9 @@ async def inspect_ticker_evidence(ticker: str) -> dict[str, Any]:
             "quadrant_label": eval_res["quadrant_label"],
             "audit_tier": "PRELIMINARY_HEURISTIC",
             "executive_summary": executive_summary,
+            "tkbi_entity_aggregation": eval_res.get("tkbi_entity_aggregation", {}),
+            "tkbi_activity_breakdown": eval_res.get("tkbi_activity_breakdown", []),
+            "grandfathering_sunsetting_profile": eval_res.get("grandfathering_sunsetting_profile", {}),
             "tkbi_evidence_dossier": {
                 "audit_metadata": {
                     "audit_tier": "PRELIMINARY_HEURISTIC",
@@ -431,7 +434,7 @@ async def generate_tkbi_audit_checklist(
         matches = vector_store.search(query_context, top_k=3)
 
         from sustainmetric.scoring_engine import ScoringEngine
-        c_score, _ = ScoringEngine.calculate_consistency_score(
+        c_score, *_ = ScoringEngine.calculate_consistency_score(
             overview,
             report.get("financials", {}),
             news,

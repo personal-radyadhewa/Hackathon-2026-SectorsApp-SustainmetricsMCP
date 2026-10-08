@@ -145,23 +145,27 @@ class TKBIVectorStore:
             conn.close()
 
     def seed_defaults_if_empty(self) -> None:
-        """Seed pre-defined OJK TKBI 2024 documents if store is uninitialized."""
+        """Seed pre-defined OJK TKBI documents if store is uninitialized or missing seeds."""
+        if not SEEDS_FILE.exists():
+            return
+
+        with open(SEEDS_FILE, "r", encoding="utf-8") as f:
+            seeds = json.load(f)
+
         conn = self._get_connection()
         try:
             cursor = conn.execute("SELECT COUNT(*) FROM tkbi_documents")
             count = cursor.fetchone()[0]
+        except sqlite3.OperationalError:
+            self._init_db()
+            count = 0
         finally:
             conn.close()
 
-        if count > 0:
-            return
-
-        if SEEDS_FILE.exists():
-            with open(SEEDS_FILE, "r", encoding="utf-8") as f:
-                seeds = json.load(f)
+        if count < len(seeds):
             for doc in seeds:
                 self.upsert_document(doc)
-            logger.info(f"Seeded {len(seeds)} TKBI 2024 taxonomy documents.")
+            logger.info(f"Seeded {len(seeds)} TKBI taxonomy documents.")
 
     def search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
         """Semantic search returning top-k matching TKBI taxonomy clauses with similarity score."""
@@ -170,6 +174,15 @@ class TKBIVectorStore:
 
         conn = self._get_connection()
         try:
+            cursor = conn.execute(
+                "SELECT id, sector, subsector, activity, criteria_level, tsc, dnsh, mss, embedding FROM tkbi_documents"
+            )
+            rows = cursor.fetchall()
+        except sqlite3.OperationalError:
+            conn.close()
+            self._init_db()
+            self.seed_defaults_if_empty()
+            conn = self._get_connection()
             cursor = conn.execute(
                 "SELECT id, sector, subsector, activity, criteria_level, tsc, dnsh, mss, embedding FROM tkbi_documents"
             )

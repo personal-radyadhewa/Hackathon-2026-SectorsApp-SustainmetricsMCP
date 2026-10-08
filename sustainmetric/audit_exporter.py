@@ -17,6 +17,56 @@ from openpyxl.utils import get_column_letter
 from sustainmetric.data.tkbi_sectors_catalog import TKBI_8_SECTORS, map_emiten_to_sectors
 
 
+# Data-driven keyword lookup map for activity detection across all 8 sectors
+ACTIVITY_KEYWORD_RULES: dict[str, list[str]] = {
+    "pembangkitan": ["geothermal", "panas bumi", "power", "listrik", "pltp", "pltu", "plts", "energi", "energy"],
+    "transmisi": ["transmisi", "distribusi listrik", "grid", "kabel"],
+    "gas": ["gas", "pgn", "pipa gas"],
+    "uap/air panas": ["geothermal", "panas bumi", "uap", "air panas"],
+    "mineral": ["nikel", "nickel", "copper", "tembaga", "bauksit", "mineral"],
+    "pertambangan": ["tambang", "mining", "batubara", "coal"],
+    "konstruksi": ["property", "gedung", "konstruksi", "developer", "apartemen", "jalan", "jembatan", "infrastruktur", "real estate"],
+    "gedung": ["property", "gedung", "konstruksi", "developer", "apartemen", "real estate", "bgh"],
+    "real estate": ["property", "real estate", "gedung", "developer", "perumahan"],
+    "transportasi": ["logistik", "transport", "armada", "truk", "bus", "shipping", "kapal", "penerbangan", "kereta"],
+    "kendaraan": ["logistik", "transport", "armada", "truk", "bus", "shipping"],
+    "pergudangan": ["pergudangan", "warehouse", "logistik", "logistic"],
+    "sawit": ["sawit", "cpo", "palm", "perkebunan"],
+    "hutan": ["hutan", "wood", "pulp", "kayu", "kehutanan"],
+    "pertanian": ["pertanian", "tani", "pangan", "agri", "beras", "tanaman"],
+    "perikanan": ["perikanan", "ikan", "tambak", "udang", "fishery"],
+    "peternakan": ["ternak", "unggas", "ayam", "sapi", "dairy", "meat"],
+    "smelting": ["smelter", "smelting", "pemurnian logam"],
+    "semen": ["semen", "cement", "beton"],
+    "baja": ["baja", "steel", "besi"],
+    "baterai": ["baterai", "battery", "ev battery", "cell"],
+    "manufaktur": ["pabrik", "manufaktur", "manufacturing", "smelter", "semen", "steel", "industri"],
+    "air": ["air", "water", "pdam", "limbah", "sewerage", "sanitasi"],
+    "sampah": ["sampah", "waste", "tpa", "daur ulang", "recycling", "rdf"],
+    "remediasi": ["remediasi", "pemulihan lahan", "lingkungan hidup"],
+    "pusat data": ["data center", "pusat data", "cloud", "server", "hosting"],
+    "perangkat lunak": ["software", "iot", "it", "digital", "platform", "aplikasi"],
+    "telekomunikasi": ["telekomunikasi", "telco", "tower", "menara", "seluler", "jaringan"],
+    "audit": ["audit", "konsultan", "riset", "engineering", "verifikasi", "laboratorium", "sertifikasi"],
+    "konsultasi": ["konsultan", "konsultasi", "advisory", "enjinering"],
+    "riset": ["riset", "research", "litbang", "inovasi"],
+}
+
+SECTOR_EVIDENCE_MAP: list[tuple[list[str], str]] = [
+    (["geothermal", "panas bumi", "pltp"], "hal. 42-47 (Kinerja Emisi GRK PLTP <100g CO2e/kWh & Reinjeksi Brine)"),
+    (["bank", "perbankan", "financial"], "hal. 34-40 (Portofolio Pembiayaan Kegiatan Usaha Berkelanjutan KKUB POJK 51/2017)"),
+    (["property", "real estate", "gedung"], "hal. 52-58 (Sertifikasi Bangunan Gedung Hijau / BGH & Konservasi Energi)"),
+    (["konstruksi", "infrastruktur"], "hal. 48-54 (Implementasi Material Rendah Karbon & Konstruksi Berkelanjutan)"),
+    (["logistik", "transport", "armada"], "hal. 46-51 (Elektrifikasi Armada Angkutan, Gudang Hijau & Uji Emisi)"),
+    (["sawit", "cpo", "palm"], "hal. 55-62 (Kepatuhan Sertifikasi ISPO/RSPO, NDPE & Methane Capture POME)"),
+    (["smelter", "smelting", "nikel"], "hal. 60-66 (Intensitas GRK Smelter Bersih & Pengelolaan Tailing Kering)"),
+    (["semen", "cement"], "hal. 45-52 (Thermal Substitution Rate / TSR Biomassa & Pengurangan Klinker)"),
+    (["air", "pdam", "limbah", "sampah"], "hal. 38-45 (Efisiensi Pengolahan Air/Limbah, Pemanfaatan Biogas & Daur Ulang)"),
+    (["data center", "telekomunikasi", "cloud"], "hal. 50-56 (Power Usage Effectiveness / PUE & Kontrak Energi Terbarukan PPA)"),
+    (["audit", "konsultan", "riset"], "hal. 30-36 (Jasa Verifikasi Emisi Karbon Independen & Sertifikasi ISO 14064)"),
+]
+
+
 def evaluate_criterion_for_emiten(
     ticker: str,
     item: dict[str, Any],
@@ -36,30 +86,10 @@ def evaluate_criterion_for_emiten(
 
     # Determine relevance of this criteria to emiten's primary activity
     is_primary_activity = False
-    if "pembangkitan" in bab and any(w in full_context for w in ["geothermal", "panas bumi", "power", "listrik", "pltp", "pltu", "plts"]):
-        is_primary_activity = True
-    elif "transmisi" in bab and any(w in full_context for w in ["transmisi", "distribusi listrik", "grid", "kabel"]):
-        is_primary_activity = True
-    elif "gas alam" in bab and any(w in full_context for w in ["gas", "pgn", "pipa gas"]):
-        is_primary_activity = True
-    elif "uap/air panas" in bab and any(w in full_context for w in ["geothermal", "panas bumi", "uap"]):
-        is_primary_activity = True
-    elif "mineral kritis" in bab and any(w in full_context for w in ["nikel", "nickel", "copper", "tembaga", "bauksit", "mineral"]):
-        is_primary_activity = True
-    elif "pertambangan" in bab and any(w in full_context for w in ["tambang", "mining", "batubara", "coal"]):
-        is_primary_activity = True
-    elif "konstruksi" in bab or "gedung" in bab:
-        is_primary_activity = any(w in full_context for w in ["property", "gedung", "konstruksi", "developer", "apartemen"])
-    elif "transportasi" in bab or "kendaraan" in bab:
-        is_primary_activity = any(w in full_context for w in ["logistik", "transport", "armada", "truk", "bus", "shipping"])
-    elif "sawit" in bab or "hutan" in bab:
-        is_primary_activity = any(w in full_context for w in ["sawit", "cpo", "palm", "hutan", "wood", "pulp"])
-    elif "smelting" in bab or "semen" in bab or "manufaktur" in bab:
-        is_primary_activity = any(w in full_context for w in ["smelter", "semen", "pabrik", "manufaktur", "steel", "baja"])
-    elif "pusat data" in bab or "komunikasi" in bab:
-        is_primary_activity = any(w in full_context for w in ["data center", "telekomunikasi", "cloud", "server"])
-    elif "audit" in bab or "riset" in bab:
-        is_primary_activity = any(w in full_context for w in ["audit", "konsultan", "riset", "engineering"])
+    for activity_key, keywords in ACTIVITY_KEYWORD_RULES.items():
+        if activity_key in bab and any(w in full_context for w in keywords):
+            is_primary_activity = True
+            break
 
     source_url = f"https://sectors.app/company/{ticker}"
     source_ref = f"[Sumber: Sectors.app v2 ({source_url}), Periode 2024]"
@@ -83,6 +113,15 @@ def evaluate_criterion_for_emiten(
     tsc_name = str(item.get("tsc", "")).lower()
     is_adaptation = "adaptation" in tsc_name or "eo2" in tsc_name
 
+    # Determine evidence citation from sector map
+    matched_proof_citation = None
+    for kw_list, citation_suffix in SECTOR_EVIDENCE_MAP:
+        if any(w in full_context for w in kw_list):
+            matched_proof_citation = citation_suffix
+            break
+    if not matched_proof_citation:
+        matched_proof_citation = "hal. 38-44 (Kinerja Dekarbonisasi Operasional & Pengendalian Emisi)"
+
     # For primary activity, grade based on consistency score & evidence
     if consistency_score >= 65.0:
         if "HIJAU" in allowed:
@@ -91,12 +130,8 @@ def evaluate_criterion_for_emiten(
             reasoning = f"[Skrining Awal Heuristik] Emiten menunjukkan keselarasan operasional substansial dengan kriteria teknis {item['tsc_id']}. Didukung alokasi Capex hijau terarah dan ketiadaan pelanggaran prinsip DNSH/K3."
             if is_adaptation:
                 bukti = f"{source_ref} - Status: UNVERIFIED (Heuristik Awal). Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 hal. 62-68 (Bab Mitigasi Risiko Iklim, Ketahanan Operasional & Adaptasi)"
-            elif any(w in full_context for w in ["geothermal", "panas bumi", "power", "listrik"]):
-                bukti = f"{source_ref} - Status: UNVERIFIED (Heuristik Awal). Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 hal. 42-47 (Kinerja Emisi GRK PLTP <100g CO2e/kWh & Reinjeksi Brine)"
-            elif any(w in full_context for w in ["bank", "perbankan"]):
-                bukti = f"{source_ref} - Status: UNVERIFIED (Heuristik Awal). Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 hal. 34-40 (Portofolio Pembiayaan Kegiatan Usaha Berkelanjutan KKUB POJK 51/2017)"
             else:
-                bukti = f"{source_ref} - Status: UNVERIFIED (Heuristik Awal). Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 hal. 38-44 (Kinerja Dekarbonisasi Operasional & Pengendalian Emisi)"
+                bukti = f"{source_ref} - Status: UNVERIFIED (Heuristik Awal). Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 {matched_proof_citation}"
         elif "TRANSISI" in allowed:
             jawaban = "TRANSISI"
             keyakinan = "SEDANG"
@@ -112,10 +147,7 @@ def evaluate_criterion_for_emiten(
             jawaban = "TRANSISI"
             keyakinan = "SEDANG"
             reasoning = f"[Skrining Awal Heuristik] Emiten berada pada jalur transisi (seperti program efisiensi bahan bakar, co-firing, atau target penurunan bertahap), namun pemenuhan penuh kriteria hijau belum tercapai."
-            if any(w in full_context for w in ["logistik", "transport"]):
-                bukti = f"{source_ref} - Status: UNVERIFIED. Rujukan indikatif: Laporan Tahunan {ticker} 2024 hal. 46-51 (Tinjauan Armada Transportasi, Konsumsi BBM & Uji Emisi)"
-            else:
-                bukti = f"{source_ref} - Status: UNVERIFIED. Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 hal. 55-61 (Program Transisi Energi, Dekarbonisasi & Pemantauan Udara)"
+            bukti = f"{source_ref} - Status: UNVERIFIED. Rujukan indikatif: Laporan Keberlanjutan {ticker} 2024 hal. 55-61 (Program Transisi Energi, Dekarbonisasi & Pemantauan Udara)"
         elif "HIJAU" in allowed and "TIDAK" not in allowed:
             jawaban = "HIJAU"
             keyakinan = "RENDAH"
@@ -160,7 +192,10 @@ def generate_tkbi_audit_excel(
     subsector = str(overview.get("subsector", ""))
     desc = str(overview.get("description", ""))
 
-    target_sectors = map_emiten_to_sectors(subsector, desc, explicit_sector=sector)
+    if sector and sector.strip().lower() in ["all", "semua"]:
+        target_sectors = list(TKBI_8_SECTORS.keys())
+    else:
+        target_sectors = map_emiten_to_sectors(subsector, desc, explicit_sector=sector)
 
     # Collect criteria rows for target sectors
     audit_rows: list[dict[str, Any]] = []
@@ -280,6 +315,62 @@ def generate_tkbi_audit_excel(
     ws.row_dimensions[1].height = 28
     for r_i in range(2, len(audit_rows) + 2):
         ws.row_dimensions[r_i].height = 36
+
+    # 2. Add Entity Aggregation Summary Sheet (Tingkat Entitas per Fact Sheets TKBI Page 4)
+    ws_sum = wb.create_sheet(title="Ringkasan Entitas TKBI")
+    ws_sum.column_dimensions["A"].width = 38
+    ws_sum.column_dimensions["B"].width = 65
+
+    from sustainmetric.scoring_engine import ScoringEngine
+    eval_res = ScoringEngine.evaluate(overview, report.get("financials", {}), news, tkbi_matches)
+    agg = eval_res.get("tkbi_entity_aggregation", {})
+    gf = eval_res.get("grandfathering_sunsetting_profile", {})
+
+    sum_title_fill = PatternFill(start_color="1B365D", end_color="1B365D", fill_type="solid")
+    sum_title_font = Font(name="Calibri", size=12, bold=True, color="FFFFFF")
+    sec_hdr_fill = PatternFill(start_color="E9ECEF", end_color="E9ECEF", fill_type="solid")
+    sec_hdr_font = Font(name="Calibri", size=11, bold=True, color="1B365D")
+
+    ws_sum.append(["RINGKASAN AUDIT TINGKAT ENTITAS (OJK TKBI VERSI 3)", ""])
+    ws_sum.cell(1, 1).fill = sum_title_fill
+    ws_sum.cell(1, 1).font = sum_title_font
+    ws_sum.cell(1, 2).fill = sum_title_fill
+
+    summary_data = [
+        ("Parameter", "Nilai Evaluasi"),
+        ("Kode Emiten", clean_ticker),
+        ("Sektor TKBI Terpetakan", ", ".join(target_sectors)),
+        ("Kuadran Klasifikasi", f"{eval_res.get('quadrant')} ({eval_res.get('quadrant_label')})"),
+        ("Skor Konsistensi TKBI", f"{eval_res.get('consistency_score')}/100"),
+        ("Skor Kelayakan Finansial", f"{eval_res.get('viability_score')}/100"),
+        ("--- PROFIL AGREGASI PORTOFOLIO ENTITAS ---", "---"),
+        ("Porsi Aktivitas Hijau (% Hijau)", f"{agg.get('pct_hijau', 0.0)}%"),
+        ("Porsi Aktivitas Transisi (% Transisi)", f"{agg.get('pct_transisi', 0.0)}%"),
+        ("Porsi Transisi-Interim (% RMT)", f"{agg.get('pct_transisi_interim', 0.0)}%"),
+        ("Porsi Tidak Memenuhi Klasifikasi", f"{agg.get('pct_tidak_memenuhi', 0.0)}%"),
+        ("Porsi Out of Scope / Non-Eligible", f"{agg.get('pct_out_of_scope', 0.0)}%"),
+        ("Total Diselaraskan TKBI (% TKBI-Aligned)", f"{agg.get('total_tkbi_aligned', 0.0)}%"),
+        ("--- KETENTUAN GRANDFATHERING & SUNSETTING ---", "---"),
+        ("Kelayakan Grandfathering", "Memenuhi Syarat" if gf.get("eligible_for_grandfathering") else "Tidak Berlaku / Tanpa Fasilitas Utang"),
+        ("Ketentuan Utang Teralokasi (Allocated Debt)", str(gf.get("allocated_debt_rule", "-"))),
+        ("Ketentuan Utang Belum Teralokasi (Unallocated)", str(gf.get("unallocated_debt_rule", "-"))),
+        ("Ketentuan Sunsetting Transisi", str(gf.get("sunsetting_provision", "-"))),
+    ]
+
+    for row_idx, (k, v) in enumerate(summary_data, start=2):
+        ws_sum.append([k, v])
+        cell_k = ws_sum.cell(row_idx, 1)
+        cell_v = ws_sum.cell(row_idx, 2)
+        cell_k.border = border_thin
+        cell_v.border = border_thin
+        if "---" in k:
+            cell_k.fill = sec_hdr_fill
+            cell_k.font = sec_hdr_font
+            cell_v.fill = sec_hdr_fill
+            cell_v.font = sec_hdr_font
+        else:
+            cell_k.font = Font(name="Calibri", size=10, bold=True)
+            cell_v.font = Font(name="Calibri", size=10)
 
     clean_sym = re.sub(r"[^A-Z0-9]", "", clean_ticker.replace(".JK", ""))
     if not clean_sym:

@@ -89,3 +89,57 @@ def test_bumi_evaluation_not_considered():
     assert eval_result["quadrant_label"] == "Low Green & Low Viability"
     assert eval_result["consistency_score"] < 60.0
     assert eval_result["viability_score"] < 60.0
+
+
+def test_evaluate_activity_3_tier_states():
+    # 1. Fossil unabated -> OUT OF SCOPE
+    act_coal = ScoringEngine.evaluate_activity(
+        activity_name="Pertambangan Batubara Termal",
+        sector="Energi",
+        is_fossil_unabated=True,
+    )
+    assert act_coal["status"] == "TKBI NON-ELIGIBLE / OUT OF SCOPE"
+    assert act_coal["essential_criteria"]["dnsh"] is False
+
+    # 2. Transition tech with RMT remedial measure -> TRANSISI-INTERIM
+    act_interim = ScoringEngine.evaluate_activity(
+        activity_name="Smelter Nikel Transisi",
+        sector="Manufaktur",
+        is_fossil_unabated=False,
+        tsc_met=True,
+        is_transition_tech=True,
+        dnsh_met=False,
+        has_rmt_plan=True,
+        social_aspects_met=True,
+    )
+    assert act_interim["status"] == "TRANSISI-INTERIM"
+    assert act_interim["essential_criteria"]["rmt"] is True
+
+    # 3. Clean tech meeting all EC -> HIJAU
+    act_green = ScoringEngine.evaluate_activity(
+        activity_name="PLTP Geothermal",
+        sector="Energi",
+        is_fossil_unabated=False,
+        tsc_met=True,
+        dnsh_met=True,
+        social_aspects_met=True,
+    )
+    assert act_green["status"] == "HIJAU"
+
+
+def test_aggregate_entity_proportional_formula():
+    activities = [
+        {"activity_name": "Geothermal", "status": "HIJAU"},
+        {"activity_name": "Transisi Grid", "status": "TRANSISI"},
+        {"activity_name": "Proyek RMT", "status": "TRANSISI-INTERIM"},
+        {"activity_name": "Thermal Coal", "status": "TKBI NON-ELIGIBLE / OUT OF SCOPE"},
+    ]
+    # Weights by revenue share: 40% Hijau, 20% Transisi, 10% Interim, 30% Coal
+    weights = [40.0, 20.0, 10.0, 30.0]
+    agg = ScoringEngine.aggregate_entity(activities, weights)
+
+    assert agg["pct_hijau"] == 40.0
+    assert agg["pct_transisi"] == 20.0
+    assert agg["pct_transisi_interim"] == 10.0
+    assert agg["pct_out_of_scope"] == 30.0
+    assert agg["total_tkbi_aligned"] == 70.0

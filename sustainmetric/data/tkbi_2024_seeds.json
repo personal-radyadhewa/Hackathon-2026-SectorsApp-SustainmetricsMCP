@@ -53,5 +53,71 @@
     "dnsh": "Zero Deep Sea Tailings Placement (DSTP); dry stacking tailings management required.",
     "mss": "Stringent occupational safety standards in high-heat pyrometallurgical zones.",
     "keywords": ["smelter", "nickel", "nikel", "aluminum", "low carbon", "tailings", "renewable power", "industrial park"]
+  },
+  {
+    "id": "TKBI-2024-CRE-01",
+    "sector": "Construction & Real Estate",
+    "subsector": "Green Buildings",
+    "activity": "Construction of Certified Energy-Efficient Buildings",
+    "criteria_level": "Hijau",
+    "tsc": "Certified BGH Utama/Madya or Greenship Gold/Platinum with primary energy consumption at least 25% lower than national building standards.",
+    "dnsh": "Zero construction on protected primary forest or wetland ecosystems; integrated rainwater absorption runoff design.",
+    "mss": "Contractor compliance with SMK3 construction occupational health and safety regulations.",
+    "keywords": ["property", "gedung hijau", "bgh", "greenship", "energy efficiency", "real estate", "apartemen", "perkantoran", "bangunan"]
+  },
+  {
+    "id": "TKBI-2024-TRS-01",
+    "sector": "Transportation & Storage",
+    "subsector": "Zero-Emission Fleet",
+    "activity": "Electric Vehicle Commercial Fleet & Green Logistics Hub",
+    "criteria_level": "Hijau",
+    "tsc": "Commercial fleet operations utilizing 100% battery electric vehicles (KBLBB) or green hydrogen fuel cells with zero tailpipe emissions.",
+    "dnsh": "Safe battery replacement and licensed hazardous waste disposal protocols under Indonesian environmental standards.",
+    "mss": "Fair driver working hours and compliance with transport labor safety guidelines.",
+    "keywords": ["transport", "logistik", "armada", "kblbb", "electric vehicle", "truk listrik", "pergudangan hijau", "spklu", "shipping"]
+  },
+  {
+    "id": "TKBI-2024-AFF-01",
+    "sector": "Agriculture, Forestry & Fishing",
+    "subsector": "Sustainable Palm Oil & Forestry",
+    "activity": "Certified Sustainable Palm Oil Plantation & Methane Capture",
+    "criteria_level": "Hijau",
+    "tsc": "100% certified ISPO and RSPO; strict NDPE compliance since national cutoff date; operational biogas methane capture facility for POME effluent.",
+    "dnsh": "Zero planting on peatland regardless of depth; preservation of High Conservation Value (HCV) and High Carbon Stock (HCS) forests.",
+    "mss": "Free, Prior, and Informed Consent (FPIC) with local customary communities and plasma smallholder empowerment programs.",
+    "keywords": ["sawit", "cpo", "palm oil", "ispo", "rspo", "ndpe", "pome", "methane capture", "kehutanan", "hutan gambut"]
+  },
+  {
+    "id": "TKBI-2024-WSS-01",
+    "sector": "Water Supply, Sewerage & Waste Management",
+    "subsector": "Circular Waste & Wastewater Treatment",
+    "activity": "Municipal Wastewater Methane Capture & RDF Production",
+    "criteria_level": "Hijau",
+    "tsc": "Centralized industrial or municipal wastewater treatment plants with anaerobic digester methane recovery, or waste-to-energy facilities yielding Refuse Derived Fuel (RDF).",
+    "dnsh": "Treated effluent quality meets national discharge standards (Permen LHK) for BOD, COD, and heavy metals.",
+    "mss": "Sanitation worker personal protective equipment (PPE) protocols and biochemical exposure monitoring.",
+    "keywords": ["air bersih", "air limbah", "ipal", "waste to energy", "rdf", "daur ulang", "psel", "pdam", "sampah", "tpa"]
+  },
+  {
+    "id": "TKBI-2024-ICT-01",
+    "sector": "Information & Communication",
+    "subsector": "Green Data Center & Digital Telemetry",
+    "activity": "Eco-Efficient Cloud Data Center Operations",
+    "criteria_level": "Hijau",
+    "tsc": "Annual Power Usage Effectiveness (PUE) <= 1.35 supported by renewable Power Purchase Agreements (PPA) and low GWP refrigerants.",
+    "dnsh": "E-waste disposal handled via certified electronic recycling partners; zero landfill dumping of server hardware.",
+    "mss": "Data center physical security and technical workforce ergonomics.",
+    "keywords": ["data center", "pusat data", "pue", "cloud", "telekomunikasi", "iot emisi", "green data center", "server", "telemetri"]
+  },
+  {
+    "id": "TKBI-2024-PST-01",
+    "sector": "Professional, Scientific & Technical Activities",
+    "subsector": "Decarbonization Advisory & GHG Verification",
+    "activity": "Independent Industrial Energy Auditing & Carbon Verification",
+    "criteria_level": "Hijau",
+    "tsc": "Third-party GHG verification and validation services accredited by KAN conforming to ISO 14064/14065, or certified industrial energy audits identifying >15% energy reductions.",
+    "dnsh": "Not applicable (direct enabling environmental activity exempt from detrimental footprint).",
+    "mss": "Adherence to international technical code of ethics and professional independence.",
+    "keywords": ["audit energi", "verifikasi karbon", "iso 14064", "konsultan lingkungan", "transition plan", "sbti", "riset iklim", "kan"]
   }
 ]
